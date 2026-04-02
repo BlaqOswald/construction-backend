@@ -1,0 +1,15 @@
+{
+  "type": "postgres",
+  "host": "localhost",
+  "port": 5432,
+  "username": "workshop",
+  "password": "StrongPass!23",
+  "database": "building",
+  "synchronize": false,
+  "logging": false,
+  "entities": ["dist/**/*.entity{.ts,.js}"],
+  "migrations": ["dist/migration/**/*.js"],
+  "cli": {
+    "migrationsDir": "src/migration"
+  }
+}
