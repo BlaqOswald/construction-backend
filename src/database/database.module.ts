@@ -1,25 +1,14 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Pool } from 'pg';
+import { pool } from '../db'; // db.ts is in src/, so '../db' from inside src/database/
 
 @Module({
-  imports: [
-    // env file is three dirs up from src/database
-    ConfigModule.forRoot({ envFilePath: ['../../../postgres.env'] }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get<string>('POSTGRES_HOST'),
-        port: +config.get<string>('POSTGRES_PORT'),
-        username: config.get<string>('POSTGRES_USER'),
-        password: config.get<string>('POSTGRES_PASSWORD'),
-        database: config.get<string>('POSTGRES_DB'),
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-        synchronize: true,   // dev‑only; change to false in prod
-      }),
-      inject: [ConfigService],
-    }),
-  ],
+providers: [
+{
+provide: 'DATABASE_POOL', // Injection token (consistent name)
+useValue: pool, // Your exported pool from db.ts
+},
+],
+exports: ['DATABASE_POOL'], // Allow other modules to use it
 })
 export class DatabaseModule {}
