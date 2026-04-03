@@ -41,7 +41,6 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error("Invalid password");
   }
 
-  // 🔐 CREATE JWT TOKEN WITH ROLE
   const token = jwt.sign(
     {
       id: user.id,
