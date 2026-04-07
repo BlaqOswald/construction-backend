@@ -5,11 +5,15 @@ dotenv.config();
 import { pool } from "./db";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import projectRoutes from "./routes/project.routes";
 import activityRoutes from "./routes/activity.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import authRoutes from "./routes/auth.routes";
-import taskRoutes from "./routes/task.routes";
+import projectRoutes from "./modules/projects/projects.routes";
+import taskRoutes from "./modules/tasks/tasks.routes";
+import materialRoutes from "./modules/materials/materials.routes";
+import subcontractorRoutes from "./modules/subcontractors/subcontractors.routes";
+import reportRoutes from "./modules/reports/reports.routes";
+import userRoutes from "./modules/users/users.routes";
 
 const app = express();
 
@@ -35,12 +39,15 @@ pool.query("SELECT NOW()")
 // ----------------------------------------------------
 // ROUTES (IMPORTANT ORDER)
 // ----------------------------------------------------
-app.use("/projects", projectRoutes);
 app.use("/activities", activityRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/auth", authRoutes);
+app.use("/projects", projectRoutes);
+app.use("/users", userRoutes);
 app.use("/tasks", taskRoutes);
-
+app.use("/materials", materialRoutes);
+app.use("/subcontractors", subcontractorRoutes);
+app.use("/reports", reportRoutes);
 // ----------------------------------------------------
 // 404 HANDLER (MUST BE LAST)
 // ----------------------------------------------------
