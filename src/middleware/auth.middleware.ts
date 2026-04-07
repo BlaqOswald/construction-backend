@@ -1,26 +1,50 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
-const SECRET = "your_secret_key";
+// Extend Express Request type properly (BEST PRACTICE)
+interface AuthRequest extends Request {
+  user?: string | JwtPayload;
+}
 
 export const verifyToken = (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
   try {
-    const decoded = jwt.verify(token, SECRET);
-    (req as any).user = decoded;
+    const authHeader = req.headers.authorization;
+
+    console.log("AUTH HEADER:", authHeader);
+
+    if (!authHeader) {
+      return res.status(403).json({ message: "No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    console.log("TOKEN:", token);
+
+    const secret = process.env.JWT_SECRET;
+
+    if (!secret) {
+      throw new Error("JWT_SECRET is not defined in environment variables");
+    }
+
+    console.log("JWT SECRET EXISTS ✔");
+
+    const decoded = jwt.verify(token, secret);
+
+    req.user = decoded;
+
     next();
-  } catch (error) {
-    return res.status(403).json({ message: "Invalid token" });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+
+    console.log("JWT ERROR:", message);
+
+    return res.status(403).json({
+      message: "Invalid token",
+      error: message,
+    });
   }
 };
