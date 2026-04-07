@@ -20,9 +20,6 @@ export const registerUser = async (email: string, password: string) => {
   return result.rows[0];
 };
 
-/**
- * LOGIN USER
- */
 export const loginUser = async (email: string, password: string) => {
   const result = await pool.query(
     `SELECT * FROM users WHERE email = $1`,

@@ -1,6 +1,8 @@
+import dns from "dns";
+dns.setDefaultResultOrder("ipv4first");
 import dotenv from "dotenv";
 dotenv.config();
-
+import { pool } from "./db";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import projectRoutes from "./routes/project.routes";
@@ -23,7 +25,13 @@ app.use(express.json());
 app.get("/", (_req: Request, res: Response) => {
   res.send("API working 🚀");
 });
-
+pool.query("SELECT NOW()")
+  .then(res => {
+    console.log("✅ DB CONNECTED:", res.rows[0]);
+  })
+  .catch(err => {
+    console.error("❌ DB CONNECTION FAILED:", err);
+  });
 // ----------------------------------------------------
 // ROUTES (IMPORTANT ORDER)
 // ----------------------------------------------------

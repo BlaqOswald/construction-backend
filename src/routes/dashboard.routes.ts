@@ -5,7 +5,16 @@ import { verifyToken } from "../middleware/auth.middleware";
 import { requireRole } from "../middleware/role.middleware";
 
 const router = Router();
-
+router.get("/", verifyToken, (req, res) => {
+  res.json({
+    message: "General dashboard working 🚀",
+    stats: {
+      users: 1,
+      projects: 2,
+      tasks: 5,
+    },
+  });
+});
 router.get(
   "/:project_id",
   verifyToken,
