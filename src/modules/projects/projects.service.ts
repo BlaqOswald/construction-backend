@@ -12,7 +12,9 @@ export const createProject = async (data: any) => {
 };
 
 export const getProjects = async () => {
-  const result = await pool.query("SELECT * FROM projects ORDER BY created_at DESC");
+  const result = await pool.query(
+    "SELECT * FROM projects ORDER BY created_at DESC"
+  );
   return result.rows;
 };
 

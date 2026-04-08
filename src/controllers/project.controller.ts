@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as projectService from "../modules/projects/project.service";
+import * as service from "../modules/projects/project.service";
 
 export const createProject = async (req: Request, res: Response) => {
   try {
