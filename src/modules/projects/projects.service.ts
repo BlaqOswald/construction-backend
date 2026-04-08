@@ -1,35 +1,35 @@
-import { Project } from "./projects.entity";
+import { pool } from "../../db";
 
-let projects: any[] = [];
+export const createProject = async (data: any) => {
+  const result = await pool.query(
+    `INSERT INTO projects (name, type, location, supervisor_id)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [data.name, data.type, data.location, data.supervisor_id]
+  );
 
-export const createProject = (data: any) => {
-  const project = {
-    id: Date.now().toString(),
-    name: data.name,
-    type: data.type,
-    location: data.location,
-    supervisor_id: data.supervisor_id,
-    locked: false,
-    created_at: new Date(),
-  };
-
-  projects.push(project);
-  return project;
+  return result.rows[0];
 };
 
-export const getProjects = () => projects;
-
-export const lockProject = (id: string) => {
-  const p = projects.find((p) => p.id === id);
-  if (p) p.locked = true;
-  return p;
+export const getProjects = async () => {
+  const result = await pool.query("SELECT * FROM projects ORDER BY created_at DESC");
+  return result.rows;
 };
+
 export const getProject = async (id: string) => {
-  const project = projects.find((p: any) => p.id === id);
+  const result = await pool.query(
+    "SELECT * FROM projects WHERE id = $1",
+    [id]
+  );
 
-  if (!project) {
-    throw new Error("Project not found");
-  }
+  return result.rows[0];
+};
 
-  return project;
+export const lockProject = async (id: string) => {
+  const result = await pool.query(
+    "UPDATE projects SET locked = true WHERE id = $1 RETURNING *",
+    [id]
+  );
+
+  return result.rows[0];
 };

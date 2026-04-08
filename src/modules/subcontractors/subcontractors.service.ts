@@ -1,25 +1,29 @@
-let subcontractors: any[] = [];
+import { pool } from "../../db";
 
-export const addSubcontractor = (data: any) => {
-  const total =
-    data.rate_type === "hourly"
-      ? data.rate * data.hours
-      : data.rate;
+export const addSubcontractor = async (data: any) => {
+  const result = await pool.query(
+    `INSERT INTO subcontractors 
+    (task_id, name, role, contract_cost, paid)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *`,
+    [
+      data.task_id,
+      data.name,
+      data.role,
+      data.contract_cost,
+      data.paid ?? false,
+    ]
+  );
 
-  const sub = {
-    id: Date.now().toString(),
-    task_id: data.task_id,
-    name: data.name,
-    work_type: data.work_type,
-    hours: data.hours,
-    rate: data.rate,
-    rate_type: data.rate_type,
-    total_cost: total,
-  };
-
-  subcontractors.push(sub);
-  return sub;
+  return result.rows[0];
 };
 
-export const getByTask = (taskId: string) =>
-  subcontractors.filter((s) => s.task_id === taskId);
+// ✅ THIS MUST EXIST EXACTLY LIKE THIS
+export const getByTask = async (taskId: string) => {
+  const result = await pool.query(
+    "SELECT * FROM subcontractors WHERE task_id = $1",
+    [taskId]
+  );
+
+  return result.rows;
+};

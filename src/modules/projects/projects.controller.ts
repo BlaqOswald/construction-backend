@@ -7,6 +7,7 @@ export const createProject = async (req: Request, res: Response) => {
     const project = await service.createProject(req.body);
     res.json(project);
   } catch (err) {
+    console.error("CREATE PROJECT ERROR:", err);
     res.status(500).json({ message: "Error creating project" });
   }
 };

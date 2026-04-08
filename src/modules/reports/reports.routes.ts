@@ -1,8 +1,16 @@
 import { Router } from "express";
-import * as controller from "./reports.controller";
+import { getReport } from "./reports.service";
 
 const router = Router();
 
-router.get("/project/:projectId", controller.getReport);
+router.get("/:projectId", async (req, res) => {
+  try {
+    const result = await getReport(req.params.projectId);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error generating report" });
+  }
+});
 
 export default router;

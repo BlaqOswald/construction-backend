@@ -1,36 +1,29 @@
-let tasks: any[] = [];
+import { pool } from "../../db";
 
-export const createTask = (data: any) => {
-  const task = {
-    id: Date.now().toString(),
-    project_id: data.project_id,
-    date: data.date,
-    activity: data.activity,
-    workers: data.workers,
-    work_description: data.work_description,
-    subcontractor_cost: data.subcontractor_cost || 0,
-    materials_cost: 0,
-    total_cost: 0,
-  };
+export const createTask = async (data: any) => {
+  const result = await pool.query(
+    `INSERT INTO tasks 
+    (project_id, date, activity, workers_count, work_description, total_cost)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING *`,
+    [
+      data.project_id,
+      data.date,
+      data.activity,
+      data.workers_count,
+      data.work_description,
+      data.total_cost || 0,
+    ]
+  );
 
-  tasks.push(task);
-  return task;
+  return result.rows[0];
 };
 
-export const getTasksByProject = (projectId: string) => {
-  return tasks.filter((t) => t.project_id === projectId);
-};
+export const getTasksByProject = async (projectId: string) => {
+  const result = await pool.query(
+    "SELECT * FROM tasks WHERE project_id = $1 ORDER BY date DESC",
+    [projectId]
+  );
 
-export const updateTaskCost = (taskId: string, materialsCost: number) => {
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task) return null;
-
-  task.materials_cost = materialsCost;
-
-  task.total_cost =
-    task.workers * 100 + // default labour rate
-    materialsCost +
-    task.subcontractor_cost;
-
-  return task;
+  return result.rows;
 };

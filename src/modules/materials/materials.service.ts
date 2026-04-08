@@ -1,30 +1,32 @@
-let materials: any[] = [];
+import { pool } from "../../db";
 
-export const addMaterial = (data: any) => {
-  const total =
-    data.unit_cost != null
-      ? data.unit_cost * data.quantity
-      : data.total_cost;
+export const addMaterial = async (data: any) => {
+  // 💰 AUTO COST CALCULATION (IMPORTANT PART)
+  const totalCost =
+    Number(data.unit_cost || 0) * Number(data.quantity_used || 0);
 
-  const material = {
-    id: Date.now().toString(),
-    task_id: data.task_id,
-    name: data.name,
-    unit_cost: data.unit_cost,
-    quantity: data.quantity,
-    total_cost: total,
-  };
+  const result = await pool.query(
+    `INSERT INTO materials 
+    (task_id, name, unit_cost, quantity_used, total_cost)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [
+      data.task_id,
+      data.name,
+      data.unit_cost,
+      data.quantity_used,
+      totalCost,
+    ]
+  );
 
-  materials.push(material);
-  return material;
+  return result.rows[0];
 };
 
-export const getMaterialsByTask = (taskId: string) => {
-  return materials.filter((m) => m.task_id === taskId);
-};
+export const getMaterialsByTask = async (taskId: string) => {
+  const result = await pool.query(
+    "SELECT * FROM materials WHERE task_id = $1",
+    [taskId]
+  );
 
-export const getTotalMaterialCost = (taskId: string) => {
-  return materials
-    .filter((m) => m.task_id === taskId)
-    .reduce((sum, m) => sum + m.total_cost, 0);
+  return result.rows;
 };

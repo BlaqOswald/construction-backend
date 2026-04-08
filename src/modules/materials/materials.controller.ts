@@ -1,14 +1,25 @@
 import { Request, Response } from "express";
 import * as service from "./materials.service";
 
-export const addMaterial = (req: Request, res: Response) => {
-  res.json(service.addMaterial(req.body));
+// ➕ Add Material
+export const addMaterial = async (req: Request, res: Response) => {
+  try {
+    const material = await service.addMaterial(req.body);
+    res.json(material);
+  } catch (err) {
+    console.error("ADD MATERIAL ERROR:", err);
+    res.status(500).json({ message: "Error adding material" });
+  }
 };
 
-export const getMaterials = (req: Request, res: Response) => {
-  const taskId = req.params.taskId as string;
-
-  const materials = service.getMaterialsByTask(taskId);
-
-  res.json(materials);
+// 📦 Get Materials by Task
+export const getMaterials = async (req: Request, res: Response) => {
+  try {
+    const taskId = req.params.taskId as string;
+    const materials = await service.getMaterialsByTask(taskId);
+    res.json(materials);
+  } catch (err) {
+    console.error("GET MATERIALS ERROR:", err);
+    res.status(500).json({ message: "Error fetching materials" });
+  }
 };
