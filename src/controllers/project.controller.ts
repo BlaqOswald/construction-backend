@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as service from "../modules/projects/projects.service";
+import * as projectService from "../modules/projects/projects.service";
 
 export const createProject = async (req: Request, res: Response) => {
   try {
@@ -18,10 +18,7 @@ export const createProject = async (req: Request, res: Response) => {
 
 export const getProjects = async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-
-    const projects = await projectService.getProjects(user.id);
-
+    const projects = await projectService.getProjects();
     res.json(projects);
   } catch (error) {
     res.status(500).json({ message: "Error fetching projects" });
