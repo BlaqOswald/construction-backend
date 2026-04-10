@@ -13,7 +13,7 @@ export const addSubcontractor = async (req: Request, res: Response) => {
 
 export const getByTask = async (req: Request, res: Response) => {
   try {
-    const taskId = req.params.taskId as string;
+    const taskId  = req.params.taskId as string;
     const data = await service.getByTask(taskId);
     res.json(data);
   } catch (err) {

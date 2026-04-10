@@ -7,7 +7,7 @@ const router = Router();
 router.post("/", controller.addTask);
 
 // GET TASKS BY PROJECT
-router.get("/project/:projectId", controller.getTasksByProject);
+router.get("/projects/:projectId", controller.getTasksByProject);
 
 // GET TASK BY ID
 router.get("/:taskId", controller.getTaskById);
