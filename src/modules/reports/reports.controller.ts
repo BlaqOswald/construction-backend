@@ -3,14 +3,21 @@ import * as service from "./reports.service";
 
 export const getReport = async (req: Request, res: Response) => {
   try {
-    const projectId = req.params.projectId;
+    // ✅ SAFE EXTRACTION (fixes TS error)
+    const projectIdParam = req.params.projectId;
 
-    // ✅ safety check (fixes TS error + runtime safety)
-    if (Array.isArray(projectId)) {
+    // ensure it's a string
+    const projectId = Array.isArray(projectIdParam)
+      ? projectIdParam[0]
+      : projectIdParam;
+
+    // optional safety check
+    if (!projectId) {
       return res.status(400).json({ message: "Invalid projectId" });
     }
 
     const result = await service.getReport(projectId);
+
     res.json(result);
   } catch (err) {
     console.error("REPORT ERROR:", err);
