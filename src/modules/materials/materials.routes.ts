@@ -5,8 +5,10 @@ const router = Router();
 
 router.post("/", controller.addMaterial);
 
-// 🔥 IMPORTANT ORDER
-router.get("/projects/:projectId/materials", controller.getByProject);
-router.get("/:taskId", controller.getMaterials);
+// BY TASK (IMPORTANT FOR UI)
+router.get("/task/:taskId", controller.getMaterials);
+
+// BY PROJECT (optional dashboard)
+router.get("/project/:projectId", controller.getByProject);
 
 export default router;
