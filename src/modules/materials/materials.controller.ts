@@ -23,3 +23,19 @@ export const getMaterials = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching materials" });
   }
 };
+
+// 📊 Get Materials by Project (🔥 THIS FIXES YOUR ISSUE)
+export const getByProject = async (req: Request, res: Response) => {
+  try {
+    const projectId = Array.isArray(req.params.projectId)
+      ? req.params.projectId[0]
+      : req.params.projectId;
+
+    const materials = await service.getMaterialsByProject(projectId);
+
+    res.json(materials);
+  } catch (err) {
+    console.error("GET MATERIALS BY PROJECT ERROR:", err);
+    res.status(500).json({ message: "Error fetching materials" });
+  }
+};
