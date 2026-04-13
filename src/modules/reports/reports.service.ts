@@ -3,87 +3,54 @@ import { pool } from "../../db";
 
 export const getReport = async (projectId: string) => {
 
+  // GET TASKS
   const tasks = await getTasksByProject(projectId);
 
-  let totalMaterialCost = 0;
-  let totalSubCost = 0;
-  let totalTaskCost = 0;
+  // GET PROJECT MATERIALS (NEW ✅)
+  const materialsRes = await pool.query(
+    "SELECT * FROM materials WHERE project_id = $1",
+    [projectId]
+  );
+
+  const materials = materialsRes.rows;
+
+  // GET PROJECT SUBCONTRACTORS (NEW ✅)
+  const subRes = await pool.query(
+    "SELECT * FROM subcontractors WHERE project_id = $1",
+    [projectId]
+  );
+
+  const subcontractors = subRes.rows;
+
+  // TOTALS
+  const totalMaterialCost = materials.reduce(
+    (sum, m) => sum + Number(m.total_cost || 0),
+    0
+  );
+
+  const totalSubCost = subcontractors.reduce(
+    (sum, s) => sum + Number(s.total_contract_cost || 0),
+    0
+  );
 
   let completed = 0;
   let inProgress = 0;
   let pending = 0;
 
-  let mostExpensiveTask: any = null;
-  let highestMaterialTask: any = null;
-
-  const enrichedTasks = await Promise.all(
-    tasks.map(async (task) => {
-      // MATERIALS
-      const materialsRes = await pool.query(
-        "SELECT * FROM materials WHERE task_id = $1",
-        [task.id]
-      ).catch(() => ({ rows: [] }));
-
-      const materials = materialsRes.rows;
-      const materialCost = materials.reduce(
-        (sum, m) => sum + Number(m.total_cost || 0),
-        0
-      );
-
-      // SUBCONTRACTORS
-      const subRes = await pool.query(
-        "SELECT * FROM subcontractors WHERE task_id = $1",
-        [task.id]
-      );
-
-      const subcontractors = subRes.rows;
-      const subCost = subcontractors.reduce(
-        (sum, s) =>
-          sum +
-          Number(s.total_contract_cost || s.contract_cost || 0),
-        0
-      );
-
-      const taskCost =
-        Number(task.total_cost || 0) + materialCost + subCost;
-
-      // STATUS TRACKING
-      if (task.status === "completed") completed++;
-      else if (task.status === "in_progress") inProgress++;
-      else pending++;
-
-      totalMaterialCost += materialCost;
-      totalSubCost += subCost;
-      totalTaskCost += taskCost;
-
-      // MOST EXPENSIVE TASK
-      if (!mostExpensiveTask || taskCost > mostExpensiveTask.taskCost) {
-        mostExpensiveTask = { ...task, taskCost };
-      }
-
-      // HIGHEST MATERIAL USAGE
-      if (!highestMaterialTask || materialCost > highestMaterialTask.materialCost) {
-        highestMaterialTask = { ...task, materialCost };
-      }
-
-      return {
-        ...task,
-        materials,
-        subcontractors,
-        materialCost,
-        subCost,
-        taskCost,
-      };
-    })
-  );
+  // TASK STATUS COUNT
+  tasks.forEach((task) => {
+    if (task.status === "completed") completed++;
+    else if (task.status === "in_progress") inProgress++;
+    else pending++;
+  });
 
   const totalTasks = tasks.length;
 
   const completionRate =
     totalTasks === 0 ? 0 : (completed / totalTasks) * 100;
 
-  const totalProjectCost =
-    totalMaterialCost + totalSubCost + totalTaskCost;
+  // 👉 SINCE MATERIALS + SUBS ARE PROJECT LEVEL
+  const totalProjectCost = totalMaterialCost + totalSubCost;
 
   return {
     projectId,
@@ -98,15 +65,19 @@ export const getReport = async (projectId: string) => {
 
       materialCost: totalMaterialCost,
       subcontractorCost: totalSubCost,
-      taskCost: totalTaskCost,
       totalProjectCost,
     },
 
     insights: {
-      mostExpensiveTask,
-      highestMaterialTask,
+      mostExpensiveTask: null, // no longer task-based
+      highestMaterialTask: null,
     },
 
-    tasks: enrichedTasks,
+    tasks: tasks.map((t) => ({
+      ...t,
+      materialCost: 0,
+      subCost: 0,
+      taskCost: 0,
+    })),
   };
 };
