@@ -13,16 +13,16 @@ export const addTask = async (data: any) => {
     [
       data.project_id,
       data.activity,
-      data.description,
+      data.description || null,
       data.workers_count,
       data.unit_cost,
       data.quantity,
       total_cost,
       data.status,
-      data.start_date,
-      data.end_date,
+      data.start_date || null,
+      data.end_date || null,
     ]
-  );
+ );
 
   return result.rows[0];
 };

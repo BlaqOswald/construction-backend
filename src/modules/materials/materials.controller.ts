@@ -3,34 +3,27 @@ import * as service from "./materials.service";
 
 export const addMaterial = async (req: Request, res: Response) => {
   try {
-    const material = await service.addMaterial(req.body);
-    res.json(material);
+    console.log("🔥 MATERIAL REQUEST BODY:", req.body);
+
+    const data = await service.addMaterial(req.body);
+
+    console.log("✅ INSERTED MATERIAL:", data);
+
+    res.json(data);
   } catch (err) {
-    console.error(err);
+    console.error("❌ ADD MATERIAL ERROR:", err);
     res.status(500).json({ message: "Error adding material" });
   }
 };
-
-export const getMaterials = async (req: Request, res: Response) => {
-  try {
-    const taskId = String(req.params.taskId);
-
-    const materials = await service.getMaterialsByTask(taskId);
-    res.json(materials);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error fetching materials" });
-  }
-};
-
 export const getByProject = async (req: Request, res: Response) => {
   try {
-    const projectId = String(req.params.projectId);
+    const projectId = req.params.projectId as string;
 
-    const materials = await service.getMaterialsByProject(projectId);
-    res.json(materials);
+    const data = await service.getByProject(projectId);
+
+    res.json(data);
   } catch (err) {
-    console.error(err);
+    console.error("❌ FETCH MATERIALS ERROR:", err);
     res.status(500).json({ message: "Error fetching materials" });
   }
 };
