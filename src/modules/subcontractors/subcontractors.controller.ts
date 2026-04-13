@@ -3,6 +3,12 @@ import * as service from "./subcontractors.service";
 
 export const addSubcontractor = async (req: Request, res: Response) => {
   try {
+    console.log("REQ BODY:", req.body);
+
+    if (!req.body.project_id) {
+      return res.status(400).json({ message: "project_id missing" });
+    }
+
     const data = await service.addSubcontractor(req.body);
     res.json(data);
   } catch (err) {
