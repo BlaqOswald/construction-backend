@@ -30,7 +30,7 @@ export const getByTask = async (taskId: string) => {
   const result = await pool.query(
     "SELECT * FROM subcontractors WHERE task_id = $1 ORDER BY payment_date DESC",
     [taskId]
-  );
+  ).catch(() => ({ rows: [] }));
 
   return result.rows;
 };

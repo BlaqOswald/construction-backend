@@ -2,6 +2,7 @@ import { getTasksByProject } from "../tasks/tasks.service";
 import { pool } from "../../db";
 
 export const getReport = async (projectId: string) => {
+
   const tasks = await getTasksByProject(projectId);
 
   let totalMaterialCost = 0;
@@ -21,7 +22,7 @@ export const getReport = async (projectId: string) => {
       const materialsRes = await pool.query(
         "SELECT * FROM materials WHERE task_id = $1",
         [task.id]
-      );
+      ).catch(() => ({ rows: [] }));
 
       const materials = materialsRes.rows;
       const materialCost = materials.reduce(
