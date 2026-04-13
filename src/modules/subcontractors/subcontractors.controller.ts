@@ -6,18 +6,20 @@ export const addSubcontractor = async (req: Request, res: Response) => {
     const data = await service.addSubcontractor(req.body);
     res.json(data);
   } catch (err) {
-    console.error("SUBCONTRACTOR ERROR:", err);
+    console.error(err);
     res.status(500).json({ message: "Error adding subcontractor" });
   }
 };
 
-export const getByTask = async (req: Request, res: Response) => {
+export const getByProject = async (req: Request, res: Response) => {
   try {
-    const taskId  = req.params.taskId as string;
-    const data = await service.getByTask(taskId);
+    const projectId = req.params.projectId as string; // ✅ FIX HERE
+
+    const data = await service.getByProject(projectId);
+
     res.json(data);
   } catch (err) {
-    console.error("FETCH SUBCONTRACTORS ERROR:", err);
+    console.error(err);
     res.status(500).json({ message: "Error fetching subcontractors" });
   }
 };

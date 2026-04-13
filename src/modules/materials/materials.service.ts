@@ -13,18 +13,18 @@ export const addMaterial = async (data: any) => {
       data.quantity_used,
       data.total_cost,
       data.currency,
-      data.description || "",
-      data.date_received || null,
+      data.description ?? null,
+      data.date_received ?? null,
     ]
   );
 
   return result.rows[0];
 };
+
 export const getByProject = async (projectId: string) => {
   const result = await pool.query(
     `SELECT * FROM materials 
-     WHERE project_id = $1 
-     ORDER BY created_at DESC`,
+     WHERE project_id = $1`,
     [projectId]
   );
 
