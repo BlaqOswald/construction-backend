@@ -1,5 +1,8 @@
 import { pool } from "../../db";
 
+// ======================
+// CREATE
+// ======================
 export const addMaterial = async (data: any) => {
   const result = await pool.query(
     `INSERT INTO materials
@@ -13,31 +16,59 @@ export const addMaterial = async (data: any) => {
       data.quantity_used,
       data.total_cost,
       data.currency,
-      data.description ?? null,
-      data.date_received ?? null,
+      data.description || null,
+      data.date_received || null,
     ]
   );
 
   return result.rows[0];
 };
 
+// ======================
+// READ BY PROJECT
+// ======================
 export const getByProject = async (projectId: string) => {
   const result = await pool.query(
-    `SELECT * FROM materials 
-     WHERE project_id = $1`,
+    `SELECT * FROM materials WHERE project_id = $1 ORDER BY id DESC`,
     [projectId]
   );
 
   return result.rows;
 };
+
+// ======================
+// DELETE
+// ======================
 export const deleteMaterial = async (id: string) => {
   await pool.query("DELETE FROM materials WHERE id = $1", [id]);
 };
 
+// ======================
+// UPDATE
+// ======================
 export const updateMaterial = async (id: string, data: any) => {
   const result = await pool.query(
-    `UPDATE materials SET name=$1, quantity_used=$2, total_cost=$3 WHERE id=$4 RETURNING *`,
-    [data.name, data.quantity_used, data.total_cost, id]
+    `UPDATE materials SET
+      name = $1,
+      unit_cost = $2,
+      quantity_used = $3,
+      total_cost = $4,
+      currency = $5,
+      description = $6,
+      date_received = $7
+    WHERE id = $8
+    RETURNING *`,
+    [
+      data.name,
+      data.unit_cost,
+      data.quantity_used,
+      data.total_cost,
+      data.currency,
+      data.description || null,
+      data.date_received || null,
+      id,
+    ]
   );
+
   return result.rows[0];
 };

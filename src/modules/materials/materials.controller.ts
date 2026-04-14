@@ -1,54 +1,66 @@
 import { Request, Response } from "express";
 import * as service from "./materials.service";
 
+// ======================
+// CREATE MATERIAL
+// ======================
 export const addMaterial = async (req: Request, res: Response) => {
   try {
-    console.log("🔥 MATERIAL REQUEST BODY:", req.body);
-
-    const data = await service.addMaterial(req.body);
-
-    console.log("✅ INSERTED MATERIAL:", data);
-
-    res.json(data);
+    const result = await service.addMaterial(req.body);
+    return res.status(201).json(result);
   } catch (err) {
-    console.error("❌ ADD MATERIAL ERROR:", err);
-    res.status(500).json({ message: "Error adding material" });
+    console.error("ADD ERROR:", err);
+    return res.status(500).json({ message: "Error adding material" });
   }
 };
+
+// ======================
+// GET BY PROJECT
+// ======================
 export const getByProject = async (req: Request, res: Response) => {
   try {
-    const projectId = req.params.projectId as string;
+    const projectId = String(req.params.projectId);
 
-    const data = await service.getByProject(projectId);
+    const result = await service.getByProject(projectId);
 
-    res.json(data);
+    return res.json(result);
   } catch (err) {
-    console.error("❌ FETCH MATERIALS ERROR:", err);
-    res.status(500).json({ message: "Error fetching materials" });
+    console.error("FETCH ERROR:", err);
+    return res.status(500).json({ message: "Error fetching materials" });
   }
 };
 
+// ======================
+// DELETE MATERIAL
+// ======================
 export const deleteMaterial = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
-    // delete DB logic
+    // 🔥 ADD THIS LINE HERE
+    console.log("DELETING MATERIAL ID:", id);
 
-    res.json({ message: "Deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error });
+    await service.deleteMaterial(id);
+
+    return res.json({ message: "Deleted successfully" });
+  } catch (err) {
+    console.error("DELETE ERROR:", err);
+    return res.status(500).json({ message: "Delete failed" });
   }
 };
 
+// ======================
+// UPDATE MATERIAL
+// ======================
 export const updateMaterial = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const data = req.body;
+    const id = String(req.params.id);
 
-    // update DB logic
+    const result = await service.updateMaterial(id, req.body);
 
-    res.json({ message: "Updated successfully" });
-  } catch (error) {
-    res.status(500).json({ error });
+    return res.json(result);
+  } catch (err) {
+    console.error("UPDATE ERROR:", err);
+    return res.status(500).json({ message: "Error updating material" });
   }
 };
