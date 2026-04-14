@@ -5,9 +5,8 @@ dotenv.config();
 import { pool } from "./db";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import activityRoutes from "./routes/activity.routes";
+import authRoutes from "./modules/auth/auth.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
-import authRoutes from "./routes/auth.routes";
 import projectRoutes from "./modules/projects/projects.routes";
 import taskRoutes from "./modules/tasks/tasks.routes";
 import materialRoutes from "./modules/materials/materials.routes";
@@ -39,7 +38,7 @@ pool.query("SELECT NOW()")
 // ----------------------------------------------------
 // ROUTES (IMPORTANT ORDER)
 // ----------------------------------------------------
-app.use("/activities", activityRoutes);
+
 app.use("/dashboard", dashboardRoutes);
 app.use("/auth", authRoutes);
 app.use("/projects", projectRoutes);
