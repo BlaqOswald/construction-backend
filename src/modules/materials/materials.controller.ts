@@ -27,3 +27,28 @@ export const getByProject = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching materials" });
   }
 };
+
+export const deleteMaterial = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // delete DB logic
+
+    res.json({ message: "Deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+};
+
+export const updateMaterial = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+
+    // update DB logic
+
+    res.json({ message: "Updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+};

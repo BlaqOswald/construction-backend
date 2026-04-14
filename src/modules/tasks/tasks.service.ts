@@ -44,3 +44,6 @@ export const getTaskById = async (taskId: string) => {
 
   return result.rows[0];
 };
+export const deleteTask = async (id: string) => {
+  await pool.query(`DELETE FROM tasks WHERE id = $1`, [id]);
+};

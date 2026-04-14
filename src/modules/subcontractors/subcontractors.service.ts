@@ -38,3 +38,6 @@ export const getByProject = async (projectId: string) => {
 
   return result.rows;
 };
+export const deleteSubcontractor = async (id: string) => {
+  await pool.query(`DELETE FROM subcontractors WHERE id = $1`, [id]);
+};
