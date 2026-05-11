@@ -1,49 +1,66 @@
 import { pool } from "../../db";
 
-export const addTask = async (data: any) => {
-  const total_cost =
-    Number(data.unit_cost) *
-    Number(data.quantity || data.workers_count || 1);
-
+// CREATE
+export const createTask = async (data: any) => {
   const result = await pool.query(
     `INSERT INTO tasks
-    (project_id, activity, description, workers_count, unit_cost, quantity, total_cost, status, start_date, end_date)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    (project_id, activity, description, workers_count, unit_cost, quantity, total_cost, status)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
     RETURNING *`,
     [
       data.project_id,
       data.activity,
-      data.description || null,
+      data.description,
       data.workers_count,
       data.unit_cost,
       data.quantity,
-      total_cost,
+      data.total_cost,
       data.status,
-      data.start_date || null,
-      data.end_date || null,
     ]
- );
+  );
 
   return result.rows[0];
 };
 
-export const getTasksByProject = async (projectId: string) => {
+// GET BY PROJECT
+export const getByProject = async (projectId: string) => {
   const result = await pool.query(
-    "SELECT * FROM tasks WHERE project_id = $1 ORDER BY created_at DESC",
+    `SELECT * FROM tasks WHERE project_id = $1 ORDER BY created_at DESC`,
     [projectId]
   );
 
   return result.rows;
 };
 
-export const getTaskById = async (taskId: string) => {
+// UPDATE
+export const updateTask = async (id: string, data: any) => {
   const result = await pool.query(
-    "SELECT * FROM tasks WHERE id = $1",
-    [taskId]
+    `UPDATE tasks SET
+      activity=$1,
+      description=$2,
+      workers_count=$3,
+      unit_cost=$4,
+      quantity=$5,
+      total_cost=$6,
+      status=$7
+     WHERE id=$8
+     RETURNING *`,
+    [
+      data.activity,
+      data.description,
+      data.workers_count,
+      data.unit_cost,
+      data.quantity,
+      data.total_cost,
+      data.status,
+      id,
+    ]
   );
 
   return result.rows[0];
 };
+
+// DELETE
 export const deleteTask = async (id: string) => {
-  await pool.query(`DELETE FROM tasks WHERE id = $1`, [id]);
+  await pool.query("DELETE FROM tasks WHERE id=$1", [id]);
 };

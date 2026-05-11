@@ -1,12 +1,16 @@
-import { getTasksByProject } from "../tasks/tasks.service";
+import { getByProject as getTasksByProject } from "../tasks/tasks.service";
 import { pool } from "../../db";
 
 export const getReport = async (projectId: string) => {
 
-  // GET TASKS
+  // ======================
+  // TASKS
+  // ======================
   const tasks = await getTasksByProject(projectId);
 
-  // GET PROJECT MATERIALS (NEW ✅)
+  // ======================
+  // MATERIALS
+  // ======================
   const materialsRes = await pool.query(
     "SELECT * FROM materials WHERE project_id = $1",
     [projectId]
@@ -14,7 +18,9 @@ export const getReport = async (projectId: string) => {
 
   const materials = materialsRes.rows;
 
-  // GET PROJECT SUBCONTRACTORS (NEW ✅)
+  // ======================
+  // SUBCONTRACTORS
+  // ======================
   const subRes = await pool.query(
     "SELECT * FROM subcontractors WHERE project_id = $1",
     [projectId]
@@ -22,23 +28,30 @@ export const getReport = async (projectId: string) => {
 
   const subcontractors = subRes.rows;
 
-  // TOTALS
+  // ======================
+  // MATERIAL COST
+  // ======================
   const totalMaterialCost = materials.reduce(
-    (sum, m) => sum + Number(m.total_cost || 0),
+    (sum: number, m: any) => sum + Number(m.total_cost || 0),
     0
   );
 
+  // ======================
+  // SUBCONTRACTOR COST
+  // ======================
   const totalSubCost = subcontractors.reduce(
-    (sum, s) => sum + Number(s.total_contract_cost || 0),
+    (sum: number, s: any) => sum + Number(s.total_contract_cost || 0),
     0
   );
 
+  // ======================
+  // TASK STATS
+  // ======================
   let completed = 0;
   let inProgress = 0;
   let pending = 0;
 
-  // TASK STATUS COUNT
-  tasks.forEach((task) => {
+  tasks.forEach((task: any) => {
     if (task.status === "completed") completed++;
     else if (task.status === "in_progress") inProgress++;
     else pending++;
@@ -49,7 +62,9 @@ export const getReport = async (projectId: string) => {
   const completionRate =
     totalTasks === 0 ? 0 : (completed / totalTasks) * 100;
 
-  // 👉 SINCE MATERIALS + SUBS ARE PROJECT LEVEL
+  // ======================
+  // TOTAL COST
+  // ======================
   const totalProjectCost = totalMaterialCost + totalSubCost;
 
   return {
@@ -60,7 +75,6 @@ export const getReport = async (projectId: string) => {
       completedTasks: completed,
       inProgressTasks: inProgress,
       pendingTasks: pending,
-
       completionRate: Number(completionRate.toFixed(2)),
 
       materialCost: totalMaterialCost,
@@ -68,12 +82,7 @@ export const getReport = async (projectId: string) => {
       totalProjectCost,
     },
 
-    insights: {
-      mostExpensiveTask: null, // no longer task-based
-      highestMaterialTask: null,
-    },
-
-    tasks: tasks.map((t) => ({
+    tasks: tasks.map((t: any) => ({
       ...t,
       materialCost: 0,
       subCost: 0,

@@ -3,13 +3,16 @@ import * as controller from "./tasks.controller";
 
 const router = Router();
 
-// CREATE TASK
-router.post("/", controller.addTask);
+// CREATE
+router.post("/", controller.createTask);
 
-// GET TASKS BY PROJECT
-router.get("/projects/:projectId", controller.getTasksByProject);
+// READ BY PROJECT
+router.get("/project/:projectId", controller.getByProject);
 
-// GET TASK BY ID
-router.get("/:taskId", controller.getTaskById);
+// UPDATE
+router.put("/:id", controller.updateTask);
+
+// DELETE
 router.delete("/:id", controller.deleteTask);
+
 export default router;
