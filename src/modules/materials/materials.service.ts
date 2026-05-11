@@ -1,6 +1,10 @@
 import { pool } from "../../db";
 
-// CREATE MATERIAL
+const safeNumber = (v: any) => {
+  if (v === null || v === undefined || v === "") return 0;
+  return Number(v);
+};
+
 export const addMaterial = async (data: any) => {
   const result = await pool.query(
     `INSERT INTO materials (
@@ -17,10 +21,10 @@ export const addMaterial = async (data: any) => {
     RETURNING *`,
     [
       data.project_id,
-      data.name,
-      Number(data.unit_cost) || 0,
-      Number(data.quantity_used) || 0,
-      Number(data.total_cost) || 0,
+      data.name || "Unnamed",
+      safeNumber(data.unit_cost),
+      safeNumber(data.quantity_used),
+      safeNumber(data.total_cost),
       data.currency || "UGX",
       data.description || "",
       data.date_received || null,
@@ -30,7 +34,6 @@ export const addMaterial = async (data: any) => {
   return result.rows[0];
 };
 
-// GET BY PROJECT
 export const getByProject = async (projectId: string) => {
   const result = await pool.query(
     `SELECT * FROM materials WHERE project_id = $1 ORDER BY created_at DESC`,
@@ -40,12 +43,10 @@ export const getByProject = async (projectId: string) => {
   return result.rows;
 };
 
-// DELETE
 export const deleteMaterial = async (id: string) => {
   await pool.query(`DELETE FROM materials WHERE id = $1`, [id]);
 };
 
-// UPDATE
 export const updateMaterial = async (id: string, data: any) => {
   const result = await pool.query(
     `UPDATE materials SET
@@ -59,13 +60,13 @@ export const updateMaterial = async (id: string, data: any) => {
     WHERE id = $8
     RETURNING *`,
     [
-      data.name,
-      Number(data.unit_cost) || 0,
-      Number(data.quantity_used) || 0,
-      Number(data.total_cost) || 0,
-      data.currency,
-      data.description,
-      data.date_received,
+      data.name || "Unnamed",
+      safeNumber(data.unit_cost),
+      safeNumber(data.quantity_used),
+      safeNumber(data.total_cost),
+      data.currency || "UGX",
+      data.description || "",
+      data.date_received || null,
       id,
     ]
   );
