@@ -1,32 +1,29 @@
 import { pool } from "../../db";
 
-// CREATE MATERIAL (SAFE)
+// CREATE MATERIAL
 export const addMaterial = async (data: any) => {
-  const {
-    project_id,
-    name,
-    unit_cost,
-    quantity_used,
-    total_cost,
-    currency,
-    description,
-    date_received,
-  } = data;
-
   const result = await pool.query(
-    `INSERT INTO materials
-    (project_id, name, unit_cost, quantity_used, total_cost, currency, description, date_received)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-    RETURNING *`,
-    [
+    `INSERT INTO materials (
       project_id,
       name,
       unit_cost,
       quantity_used,
       total_cost,
       currency,
-      description || "",
-      date_received || null,
+      description,
+      date_received
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+    RETURNING *`,
+    [
+      data.project_id,
+      data.name,
+      Number(data.unit_cost) || 0,
+      Number(data.quantity_used) || 0,
+      Number(data.total_cost) || 0,
+      data.currency || "UGX",
+      data.description || "",
+      data.date_received || null,
     ]
   );
 
@@ -36,7 +33,7 @@ export const addMaterial = async (data: any) => {
 // GET BY PROJECT
 export const getByProject = async (projectId: string) => {
   const result = await pool.query(
-    `SELECT * FROM materials WHERE project_id = $1 ORDER BY id DESC`,
+    `SELECT * FROM materials WHERE project_id = $1 ORDER BY created_at DESC`,
     [projectId]
   );
 
@@ -45,7 +42,7 @@ export const getByProject = async (projectId: string) => {
 
 // DELETE
 export const deleteMaterial = async (id: string) => {
-  await pool.query("DELETE FROM materials WHERE id = $1", [id]);
+  await pool.query(`DELETE FROM materials WHERE id = $1`, [id]);
 };
 
 // UPDATE
@@ -63,12 +60,12 @@ export const updateMaterial = async (id: string, data: any) => {
     RETURNING *`,
     [
       data.name,
-      data.unit_cost,
-      data.quantity_used,
-      data.total_cost,
+      Number(data.unit_cost) || 0,
+      Number(data.quantity_used) || 0,
+      Number(data.total_cost) || 0,
       data.currency,
-      data.description || "",
-      data.date_received || null,
+      data.description,
+      data.date_received,
       id,
     ]
   );
