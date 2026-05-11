@@ -1,10 +1,14 @@
 import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
+
 import dotenv from "dotenv";
 dotenv.config();
+
 import { pool } from "./db";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
+
+// routes
 import authRoutes from "./modules/auth/auth.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import projectRoutes from "./modules/projects/projects.routes";
@@ -22,12 +26,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ TRUST PROXY (IMPORTANT FOR NGROK IPs)
+app.set("trust proxy", true);
+
+// 🔥 REQUEST LOGGING MIDDLEWARE (REMOTE ACCESS PROOF)
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  const ip =
+    req.headers["x-forwarded-for"] ||
+    req.socket.remoteAddress;
+
+  console.log("📡 REQUEST LOG -> IP:", ip, "METHOD:", req.method, "URL:", req.url);
+
+  next();
+});
+
 // ----------------------------------------------------
 // ROOT TEST
 // ----------------------------------------------------
 app.get("/", (_req: Request, res: Response) => {
   res.send("API working 🚀");
 });
+
+// ----------------------------------------------------
+// DB CONNECTION CHECK
+// ----------------------------------------------------
 pool.query("SELECT NOW()")
   .then(res => {
     console.log("✅ DB CONNECTED:", res.rows[0]);
@@ -35,10 +57,10 @@ pool.query("SELECT NOW()")
   .catch(err => {
     console.error("❌ DB CONNECTION FAILED:", err);
   });
-// ----------------------------------------------------
-// ROUTES (IMPORTANT ORDER)
-// ----------------------------------------------------
 
+// ----------------------------------------------------
+// ROUTES
+// ----------------------------------------------------
 app.use("/dashboard", dashboardRoutes);
 app.use("/auth", authRoutes);
 app.use("/projects", projectRoutes);
@@ -47,8 +69,9 @@ app.use("/tasks", taskRoutes);
 app.use("/materials", materialRoutes);
 app.use("/subcontractors", subcontractorRoutes);
 app.use("/reports", reportRoutes);
+
 // ----------------------------------------------------
-// 404 HANDLER (MUST BE LAST)
+// 404 HANDLER
 // ----------------------------------------------------
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not Found" });
@@ -57,15 +80,13 @@ app.use((_req: Request, res: Response) => {
 // ----------------------------------------------------
 // GLOBAL ERROR HANDLER
 // ----------------------------------------------------
-app.use(
-  (err: any, _req: Request, res: Response, _next: NextFunction) => {
-    console.error("[Global error]", err);
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("[Global error]", err);
 
-    res.status(err.status || 500).json({
-      message: err.message || "Internal Server Error",
-    });
-  }
-);
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+  });
+});
 
 // ----------------------------------------------------
 // START SERVER
@@ -75,4 +96,3 @@ const PORT = Number(process.env.PORT) || 8080;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
-

@@ -6,6 +6,10 @@ const router = Router();
 router.post("/", controller.createProject);
 router.get("/", controller.getProjects);
 router.get("/:id", controller.getProject);
+
+router.put("/:id", controller.updateProject);      // NEW
+router.delete("/:id", controller.deleteProject);   // NEW
+
 router.patch("/:id/lock", controller.lockProject);
 
 export default router;

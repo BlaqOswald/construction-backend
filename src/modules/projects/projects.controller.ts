@@ -1,49 +1,83 @@
 import { Request, Response } from "express";
 import * as service from "./projects.service";
 
-// ✅ Create project
-export const createProject = async (req: Request, res: Response) => {
+export const createProject = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const project = await service.createProject(req.body);
-    res.json(project);
-  } catch (err) {
-    console.error("CREATE PROJECT ERROR:", err);
-    res.status(500).json({ message: "Error creating project" });
+    res.status(201).json(project);
+  } catch (error) {
+    res.status(500).json(error);
   }
 };
 
-// ✅ Get all projects
-export const getProjects = async (req: Request, res: Response) => {
+export const getProjects = async (
+  _req: Request,
+  res: Response
+) => {
   try {
     const projects = await service.getProjects();
     res.json(projects);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching projects" });
+  } catch (error) {
+    res.status(500).json(error);
   }
 };
 
-// ✅ Get single project
-export const getProject = async (req: Request, res: Response) => {
+export const getProject = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const projectId = req.params.id as string;
-
-    const project = await service.getProject(projectId);
-
+    const project = await service.getProject(
+      req.params.id as string
+    );
     res.json(project);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching project" });
+  } catch (error) {
+    res.status(500).json(error);
   }
 };
 
-// ✅ Lock project (admin feature)
-export const lockProject = async (req: Request, res: Response) => {
+export const updateProject = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const projectId = req.params.id as string;
-
-    const project = await service.lockProject(projectId);
-
+    const project = await service.updateProject(
+      req.params.id as string,
+      req.body
+    );
     res.json(project);
-  } catch (err) {
-    res.status(500).json({ message: "Error locking project" });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
+export const deleteProject = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const result = await service.deleteProject(
+      req.params.id as string
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
+export const lockProject = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const project = await service.lockProject(
+      req.params.id as string
+    );
+    res.json(project);
+  } catch (error) {
+    res.status(500).json(error);
   }
 };
