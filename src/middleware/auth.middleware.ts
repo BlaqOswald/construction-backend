@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-// Extend Express Request type properly (BEST PRACTICE)
+// Extend Request type safely
 interface AuthRequest extends Request {
   user?: string | JwtPayload;
 }
@@ -12,39 +12,69 @@ export const verifyToken = (
   next: NextFunction
 ) => {
   try {
+    // =========================
+    // DEBUG: show full request headers
+    // =========================
+    console.log("🔵 FULL HEADERS:", req.headers);
+
     const authHeader = req.headers.authorization;
 
-    console.log("AUTH HEADER:", authHeader);
+    console.log("🔵 AUTH HEADER:", authHeader);
 
+    // =========================
+    // NO TOKEN CASE
+    // =========================
     if (!authHeader) {
-      return res.status(403).json({ message: "No token provided" });
+      console.log("❌ NO AUTH HEADER FOUND");
+      return res.status(403).json({
+        message: "No token provided",
+      });
     }
 
-    const token = authHeader.split(" ")[1];
+    // =========================
+    // EXTRACT TOKEN
+    // =========================
+    const parts = authHeader.split(" ");
 
-    console.log("TOKEN:", token);
+    if (parts.length !== 2) {
+      console.log("❌ MALFORMED AUTH HEADER:", authHeader);
+      return res.status(403).json({
+        message: "Invalid authorization format. Expected: Bearer <token>",
+      });
+    }
 
+    const token = parts[1];
+
+    console.log("🔵 TOKEN RECEIVED:", token);
+
+    // =========================
+    // CHECK SECRET
+    // =========================
     const secret = process.env.JWT_SECRET;
 
     if (!secret) {
-      throw new Error("JWT_SECRET is not defined in environment variables");
+      console.error("❌ JWT_SECRET NOT FOUND IN ENV");
+      return res.status(500).json({
+        message: "Server misconfiguration: missing JWT secret",
+      });
     }
 
-    console.log("JWT SECRET EXISTS ✔");
-
+    // =========================
+    // VERIFY TOKEN
+    // =========================
     const decoded = jwt.verify(token, secret);
+
+    console.log("✅ TOKEN VALID:", decoded);
 
     req.user = decoded;
 
     next();
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-
-    console.log("JWT ERROR:", message);
+  } catch (err: any) {
+    console.log("❌ JWT ERROR:", err.message);
 
     return res.status(403).json({
-      message: "Invalid token",
-      error: message,
+      message: "Invalid or expired token",
+      error: err.message,
     });
   }
 };
