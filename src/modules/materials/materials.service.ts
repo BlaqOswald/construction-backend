@@ -1,33 +1,48 @@
 import { pool } from "../../db";
 
-// CREATE
+// ======================
+// CREATE MATERIAL (SAFE)
+// ======================
 export const addMaterial = async (data: any) => {
   try {
+    const {
+      project_id,
+      name,
+      unit_cost,
+      quantity_used,
+      total_cost,
+      currency,
+      description,
+      date_received,
+    } = data;
+
     const result = await pool.query(
       `INSERT INTO materials
       (project_id, name, unit_cost, quantity_used, total_cost, currency, description, date_received)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
       RETURNING *`,
       [
-        data.project_id,
-        data.name,
-        Number(data.unit_cost),
-        Number(data.quantity_used),
-        Number(data.total_cost),
-        data.currency,
-        data.description || null,
-        data.date_received || null, // IMPORTANT FIX
+        project_id,
+        name,
+        Number(unit_cost) || 0,
+        Number(quantity_used) || 0,
+        Number(total_cost) || 0,
+        currency,
+        description || null,
+        date_received || null,
       ]
     );
 
     return result.rows[0];
   } catch (err) {
-    console.error("SERVICE ADD MATERIAL ERROR:", err);
+    console.error("❌ MATERIAL INSERT ERROR:", err);
     throw err;
   }
 };
 
+// ======================
 // GET BY PROJECT
+// ======================
 export const getByProject = async (projectId: string) => {
   try {
     const result = await pool.query(
@@ -37,27 +52,14 @@ export const getByProject = async (projectId: string) => {
 
     return result.rows;
   } catch (err) {
-    console.error("SERVICE FETCH ERROR:", err);
+    console.error("❌ FETCH ERROR:", err);
     throw err;
   }
 };
 
-// DELETE
-export const deleteMaterial = async (id: string) => {
-  try {
-    const result = await pool.query(
-      "DELETE FROM materials WHERE id = $1 RETURNING *",
-      [id]
-    );
-
-    return result.rows[0];
-  } catch (err) {
-    console.error("SERVICE DELETE ERROR:", err);
-    throw err;
-  }
-};
-
+// ======================
 // UPDATE
+// ======================
 export const updateMaterial = async (id: string, data: any) => {
   try {
     const result = await pool.query(
@@ -73,9 +75,9 @@ export const updateMaterial = async (id: string, data: any) => {
       RETURNING *`,
       [
         data.name,
-        Number(data.unit_cost),
-        Number(data.quantity_used),
-        Number(data.total_cost),
+        Number(data.unit_cost) || 0,
+        Number(data.quantity_used) || 0,
+        Number(data.total_cost) || 0,
         data.currency,
         data.description || null,
         data.date_received || null,
@@ -85,7 +87,24 @@ export const updateMaterial = async (id: string, data: any) => {
 
     return result.rows[0];
   } catch (err) {
-    console.error("SERVICE UPDATE ERROR:", err);
+    console.error("❌ UPDATE ERROR:", err);
+    throw err;
+  }
+};
+
+// ======================
+// DELETE
+// ======================
+export const deleteMaterial = async (id: string) => {
+  try {
+    const result = await pool.query(
+      `DELETE FROM materials WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    return result.rows[0];
+  } catch (err) {
+    console.error("❌ DELETE ERROR:", err);
     throw err;
   }
 };
