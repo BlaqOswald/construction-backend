@@ -1,32 +1,39 @@
 import { pool } from "../../db";
 
-// ======================
-// CREATE
-// ======================
+// CREATE MATERIAL (SAFE)
 export const addMaterial = async (data: any) => {
+  const {
+    project_id,
+    name,
+    unit_cost,
+    quantity_used,
+    total_cost,
+    currency,
+    description,
+    date_received,
+  } = data;
+
   const result = await pool.query(
     `INSERT INTO materials
     (project_id, name, unit_cost, quantity_used, total_cost, currency, description, date_received)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
     RETURNING *`,
     [
-      data.project_id,
-      data.name,
-      data.unit_cost,
-      data.quantity_used,
-      data.total_cost,
-      data.currency,
-      data.description || null,
-      data.date_received || null,
+      project_id,
+      name,
+      unit_cost,
+      quantity_used,
+      total_cost,
+      currency,
+      description || "",
+      date_received || null,
     ]
   );
 
   return result.rows[0];
 };
 
-// ======================
-// READ BY PROJECT
-// ======================
+// GET BY PROJECT
 export const getByProject = async (projectId: string) => {
   const result = await pool.query(
     `SELECT * FROM materials WHERE project_id = $1 ORDER BY id DESC`,
@@ -36,16 +43,12 @@ export const getByProject = async (projectId: string) => {
   return result.rows;
 };
 
-// ======================
 // DELETE
-// ======================
 export const deleteMaterial = async (id: string) => {
   await pool.query("DELETE FROM materials WHERE id = $1", [id]);
 };
 
-// ======================
 // UPDATE
-// ======================
 export const updateMaterial = async (id: string, data: any) => {
   const result = await pool.query(
     `UPDATE materials SET
@@ -64,7 +67,7 @@ export const updateMaterial = async (id: string, data: any) => {
       data.quantity_used,
       data.total_cost,
       data.currency,
-      data.description || null,
+      data.description || "",
       data.date_received || null,
       id,
     ]
