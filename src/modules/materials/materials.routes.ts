@@ -8,7 +8,7 @@ const router = Router();
 
 router.post("/", verifyToken, controller.addMaterial);
 
-router.get("/project/:projectId", verifyToken, controller.getByProject);
+router.get("/projects/:projectId", verifyToken, controller.getByProject);
 
 router.put("/:id", verifyToken, controller.updateMaterial);
 
