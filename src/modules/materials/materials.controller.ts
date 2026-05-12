@@ -4,13 +4,17 @@ import * as service from "./materials.service";
 // CREATE
 export const addMaterial = async (req: Request, res: Response) => {
   try {
+    if (!req.body.project_id) {
+      return res.status(400).json({ message: "project_id required" });
+    }
+
     const result = await service.addMaterial(req.body);
     return res.status(201).json(result);
   } catch (err) {
     console.error("ADD ERROR:", err);
     return res.status(500).json({
       message: "Failed to add material",
-      error: err,
+      error: err instanceof Error ? err.message : err,
     });
   }
 };
