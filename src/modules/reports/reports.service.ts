@@ -1,21 +1,7 @@
 import { getByProject as getTasksByProject } from "../tasks/tasks.service";
 import { pool } from "../../db";
 
-const getDays = (start?: string, end?: string) => {
-  if (!start || !end) return 1;
-
-  const s = new Date(start);
-  const e = new Date(end);
-
-  if (isNaN(s.getTime()) || isNaN(e.getTime())) return 1;
-
-  const diff = e.getTime() - s.getTime();
-
-  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-};
-
 export const getReport = async (projectId: string, month?: string) => {
-
   const allTasks = await getTasksByProject(projectId);
 
   const materialsRes = await pool.query(
@@ -28,61 +14,92 @@ export const getReport = async (projectId: string, month?: string) => {
     [projectId]
   );
 
+  const materials = materialsRes.rows;
+  const subcontractors = subRes.rows;
+
+  // ================= FILTER BY MONTH =================
   const tasks = month
-    ? allTasks.filter(t =>
-        t.start_date?.startsWith(month)
+    ? allTasks.filter((t: any) =>
+        t.created_at?.toString().startsWith(month)
       )
     : allTasks;
 
-  const materials = month
-    ? materialsRes.rows.filter(m =>
-        m.created_at?.startsWith(month)
-      )
-    : materialsRes.rows;
+  // ================= COSTS =================
+  const totalMaterialCost = materials.reduce(
+    (sum: number, m: any) => sum + Number(m.total_cost || 0),
+    0
+  );
 
-  const subcontractors = month
-    ? subRes.rows.filter(s =>
-        s.created_at?.startsWith(month)
-      )
-    : subRes.rows;
+  const totalSubCost = subcontractors.reduce(
+    (sum: number, s: any) => sum + Number(s.total_contract_cost || 0),
+    0
+  );
 
+  const totalTaskCost = tasks.reduce(
+    (sum: number, t: any) => sum + Number(t.total_cost || 0),
+    0
+  );
+
+  // ================= STATUS =================
   let completed = 0;
   let pending = 0;
   let inProgress = 0;
 
-  const formattedTasks = tasks.map(t => {
-    const days = getDays(t.start_date, t.end_date);
-
-    if (t.status === "completed") completed++;
-    else if (t.status === "in_progress") inProgress++;
+  tasks.forEach((task: any) => {
+    if (task.status === "completed") completed++;
+    else if (task.status === "in_progress") inProgress++;
     else pending++;
-
-    return {
-      ...t,
-      durationDays: days,
-    };
   });
 
-  const materialCost = materials.reduce((a, b) => a + Number(b.total_cost || 0), 0);
-  const subCost = subcontractors.reduce((a, b) => a + Number(b.total_contract_cost || 0), 0);
-  const taskCost = tasks.reduce((a, b) => a + Number(b.total_cost || 0), 0);
+  const totalTasks = tasks.length;
 
-  const total = tasks.length;
+  const completionRate =
+    totalTasks === 0 ? 0 : (completed / totalTasks) * 100;
+
+  // ================= TASK ENRICHMENT =================
+  const formattedTasks = tasks.map((task: any) => {
+    const startDate = task.start_date ? new Date(task.start_date) : null;
+    const endDate = task.end_date ? new Date(task.end_date) : null;
+
+    let daysTaken = 0;
+
+    if (startDate && endDate) {
+      daysTaken = Math.max(
+        1,
+        Math.ceil(
+          (endDate.getTime() - startDate.getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+      );
+    }
+
+    return {
+      ...task,
+
+      // 🔥 FORCE SAFE FIELDS
+      start_date: task.start_date || null,
+      end_date: task.end_date || null,
+
+      daysTaken,
+    };
+  });
 
   return {
     projectId,
 
     summary: {
-      totalTasks: total,
+      totalTasks,
       completedTasks: completed,
       pendingTasks: pending,
       inProgressTasks: inProgress,
-      completionRate: total ? (completed / total) * 100 : 0,
+      completionRate: Number(completionRate.toFixed(2)),
 
-      materialCost,
-      subcontractorCost: subCost,
-      taskCost,
-      totalProjectCost: materialCost + subCost + taskCost,
+      materialCost: totalMaterialCost,
+      subcontractorCost: totalSubCost,
+      taskCost: totalTaskCost,
+
+      totalProjectCost:
+        totalMaterialCost + totalSubCost + totalTaskCost,
     },
 
     tasks: formattedTasks,
