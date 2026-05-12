@@ -2,7 +2,6 @@ import { getByProject as getTasksByProject } from "../tasks/tasks.service";
 import { pool } from "../../db";
 
 export const getReport = async (projectId: string) => {
-
   // ======================
   // TASKS
   // ======================
@@ -29,27 +28,29 @@ export const getReport = async (projectId: string) => {
   const subcontractors = subRes.rows;
 
   // ======================
-  // MATERIAL COST
+  // COST TOTALS
   // ======================
   const totalMaterialCost = materials.reduce(
     (sum: number, m: any) => sum + Number(m.total_cost || 0),
     0
   );
 
-  // ======================
-  // SUBCONTRACTOR COST
-  // ======================
   const totalSubCost = subcontractors.reduce(
     (sum: number, s: any) => sum + Number(s.total_contract_cost || 0),
     0
   );
 
+  const totalTaskCost = tasks.reduce(
+    (sum: number, t: any) => sum + Number(t.total_cost || 0),
+    0
+  );
+
   // ======================
-  // TASK STATS
+  // TASK STATUS COUNTS
   // ======================
   let completed = 0;
-  let inProgress = 0;
   let pending = 0;
+  let inProgress = 0;
 
   tasks.forEach((task: any) => {
     if (task.status === "completed") completed++;
@@ -63,9 +64,31 @@ export const getReport = async (projectId: string) => {
     totalTasks === 0 ? 0 : (completed / totalTasks) * 100;
 
   // ======================
-  // TOTAL COST
+  // TASKS WITH DAYS TAKEN
   // ======================
-  const totalProjectCost = totalMaterialCost + totalSubCost;
+  const formattedTasks = tasks.map((task: any) => {
+    let daysTaken = 0;
+
+    if (task.start_date && task.end_date) {
+      const start = new Date(task.start_date);
+      const end = new Date(task.end_date);
+
+      daysTaken = Math.ceil(
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      );
+    }
+
+    return {
+      ...task,
+      daysTaken,
+    };
+  });
+
+  // ======================
+  // TOTAL PROJECT COST
+  // ======================
+  const totalProjectCost =
+    totalMaterialCost + totalSubCost + totalTaskCost;
 
   return {
     projectId,
@@ -73,20 +96,19 @@ export const getReport = async (projectId: string) => {
     summary: {
       totalTasks,
       completedTasks: completed,
-      inProgressTasks: inProgress,
       pendingTasks: pending,
+      inProgressTasks: inProgress,
       completionRate: Number(completionRate.toFixed(2)),
 
       materialCost: totalMaterialCost,
       subcontractorCost: totalSubCost,
+      taskCost: totalTaskCost,
       totalProjectCost,
     },
 
-    tasks: tasks.map((t: any) => ({
-      ...t,
-      materialCost: 0,
-      subCost: 0,
-      taskCost: 0,
-    })),
+    tasks: formattedTasks,
+
+    subcontractors,
+    materials,
   };
 };
