@@ -7,7 +7,7 @@ router.post("/", controller.addSubcontractor);
 router.get("/project/:projectId", controller.getByProject);
 router.delete("/:id", controller.deleteSub);
 
-// 🔥 PAYMENT ROUTE
-router.post("/payment", controller.addPayment);
+// 💰 NEW PAYMENT ROUTE
+router.put("/:id/payment", controller.addPayment);
 
 export default router;
