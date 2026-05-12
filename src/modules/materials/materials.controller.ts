@@ -22,14 +22,17 @@ export const addMaterial = async (req: Request, res: Response) => {
 // GET BY PROJECT
 export const getByProject = async (req: Request, res: Response) => {
   try {
+    console.log("PROJECT ID:", req.params.projectId);
+
     const projectId = String(req.params.projectId);
     const result = await service.getByProject(projectId);
+
     return res.json(result);
   } catch (err) {
-    console.error("FETCH ERROR:", err);
+    console.error("MATERIAL FETCH ERROR:", err);
     return res.status(500).json({
       message: "Failed to fetch materials",
-      error: err,
+      error: err instanceof Error ? err.message : err,
     });
   }
 };
