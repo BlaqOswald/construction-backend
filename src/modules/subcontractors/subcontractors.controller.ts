@@ -1,34 +1,39 @@
-import { Request, Response } from "express";
 import * as service from "./subcontractors.service";
 
-// ADD
-export const addSubcontractor = async (req: Request, res: Response) => {
+export const addSubcontractor = async (req: any, res: any) => {
   try {
     const result = await service.addSubcontractor(req.body);
-    res.status(201).json(result);
+    res.json(result);
   } catch (err) {
-    res.status(500).json({ message: "Error adding subcontractor" });
+    res.status(500).json({ message: "Error creating subcontractor" });
   }
 };
 
-// GET BY PROJECT
-export const getByProject = async (req: Request, res: Response) => {
+export const getByProject = async (req: any, res: any) => {
   try {
-    const projectId = String(req.params.projectId);
-    const result = await service.getByProject(projectId);
+    const result = await service.getByProject(req.params.projectId);
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: "Error fetching subcontractors" });
   }
 };
 
-// DELETE ONLY (because service supports it)
-export const deleteSub = async (req: Request, res: Response) => {
+/**
+ * 🔥 NEW PAYMENT FLOW (INCREMENTAL PAYMENT)
+ */
+export const addPayment = async (req: any, res: any) => {
   try {
-    const id = String(req.params.id);
-    await service.deleteSubcontractor(id);
-    res.json({ message: "Deleted successfully" });
+    const { id } = req.params;
+
+    const result = await service.updatePayment(id, req.body);
+
+    res.json(result);
   } catch (err) {
-    res.status(500).json({ message: "Error deleting subcontractor" });
+    res.status(500).json({ message: "Payment update failed" });
   }
+};
+
+export const deleteSub = async (req: any, res: any) => {
+  await service.deleteSubcontractor(req.params.id);
+  res.json({ message: "Deleted" });
 };
