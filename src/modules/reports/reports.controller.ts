@@ -9,13 +9,15 @@ export const getReport = async (req: Request, res: Response) => {
       ? projectIdParam[0]
       : projectIdParam;
 
+    const month = req.query.month as string | undefined;
+
     if (!projectId) {
       return res.status(400).json({
         message: "Project ID is required",
       });
     }
 
-    const result = await service.getReport(projectId);
+    const result = await service.getReport(projectId, month);
 
     return res.json(result);
   } catch (error) {
