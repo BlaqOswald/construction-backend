@@ -1,7 +1,7 @@
 import { pool } from "../../db";
 
 /**
- * CREATE / UPDATE subcontractor
+ * CREATE subcontractor (unchanged base logic)
  */
 export const addSubcontractor = async (data: any) => {
   const total = Number(data.total_contract_cost || 0);
@@ -10,8 +10,8 @@ export const addSubcontractor = async (data: any) => {
 
   const result = await pool.query(
     `INSERT INTO subcontractors
-    (project_id, name, task_work, description, payment_date, total_contract_cost, amount_paid, balance)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+    (project_id, name, task_work, description, payment_date, total_contract_cost, amount_paid, balance, paid)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
     RETURNING *`,
     [
       data.project_id,
@@ -22,6 +22,7 @@ export const addSubcontractor = async (data: any) => {
       total,
       paid,
       balance,
+      paid > 0
     ]
   );
 
@@ -29,63 +30,83 @@ export const addSubcontractor = async (data: any) => {
 };
 
 /**
- * GET ALL SUBCONTRACTORS (WITH CLEAN CALCULATED BALANCE)
+ * GET subcontractors + PAYMENT TIMELINE
  */
 export const getByProject = async (projectId: string) => {
-  const result = await pool.query(
+  const subs = await pool.query(
     `SELECT * FROM subcontractors
      WHERE project_id = $1
      ORDER BY created_at DESC`,
     [projectId]
   );
 
-  // ensure always consistent calculation
-  return result.rows.map((s) => {
-    const paid = Number(s.amount_paid || 0);
-    const total = Number(s.total_contract_cost || 0);
+  const enriched = await Promise.all(
+    subs.rows.map(async (sub) => {
+      const payments = await pool.query(
+        `SELECT * FROM subcontractor_payments
+         WHERE subcontractor_id = $1
+         ORDER BY payment_date DESC`,
+        [sub.id]
+      );
 
-    return {
-      ...s,
-      balance: total - paid,
-    };
-  });
+      return {
+        ...sub,
+        payments: payments.rows
+      };
+    })
+  );
+
+  return enriched;
 };
 
 /**
- * UPDATE PAYMENT (MAIN UPGRADE FEATURE)
- * - now acts like "payment flow"
+ * ADD PAYMENT (CORE FEATURE)
  */
-export const updatePayment = async (id: string, payment: any) => {
-  const subRes = await pool.query(
-    `SELECT * FROM subcontractors WHERE id = $1`,
-    [id]
+export const addPayment = async (
+  subcontractor_id: string,
+  amount_paid: number,
+  payment_date: string,
+  note?: string
+) => {
+  // 1. insert payment record
+  await pool.query(
+    `INSERT INTO subcontractor_payments
+     (subcontractor_id, amount_paid, payment_date, note)
+     VALUES ($1,$2,$3,$4)`,
+    [subcontractor_id, amount_paid, payment_date, note || null]
   );
 
-  const sub = subRes.rows[0];
+  // 2. recalc total paid
+  const paidRes = await pool.query(
+    `SELECT COALESCE(SUM(amount_paid),0) AS total_paid
+     FROM subcontractor_payments
+     WHERE subcontractor_id = $1`,
+    [subcontractor_id]
+  );
 
-  const newPaid =
-    Number(sub.amount_paid || 0) + Number(payment.amount_paid || 0);
+  const totalPaid = Number(paidRes.rows[0].total_paid);
 
-  const newBalance = Number(sub.total_contract_cost) - newPaid;
+  // 3. get contract total
+  const subRes = await pool.query(
+    `SELECT total_contract_cost FROM subcontractors WHERE id = $1`,
+    [subcontractor_id]
+  );
 
-  const result = await pool.query(
+  const totalCost = Number(subRes.rows[0].total_contract_cost);
+
+  const balance = totalCost - totalPaid;
+
+  // 4. update subcontractor summary
+  await pool.query(
     `UPDATE subcontractors
      SET amount_paid = $1,
          balance = $2,
-         last_payment_date = $3,
-         payment_note = $4
-     WHERE id = $5
-     RETURNING *`,
-    [
-      newPaid,
-      newBalance,
-      payment.payment_date || new Date(),
-      payment.note || null,
-      id,
-    ]
+         paid = $3
+     WHERE id = $4`,
+    [totalPaid, balance, balance <= 0, subcontractor_id]
   );
 
-  return result.rows[0];
+  return { totalPaid, balance };
 };
 
 /**
