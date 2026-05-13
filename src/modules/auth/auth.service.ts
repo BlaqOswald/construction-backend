@@ -18,7 +18,7 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error("User not found");
   }
 
-  // compare password
+  // bcrypt password check
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
@@ -30,7 +30,7 @@ export const loginUser = async (email: string, password: string) => {
       id: user.id,
       email: user.email,
       role: user.role,
-      projectIds: user.projectids || [], // postgres lowercase likely
+      projectIds: user.projectids || [],
     },
     process.env.JWT_SECRET!,
     { expiresIn: "1d" }
