@@ -1,21 +1,53 @@
 import { Router } from "express";
 import * as controller from "./materials.controller";
 
-import { verifyToken } from "../../middleware/auth.middleware";
-import { requireRole } from "../../middleware/role.middleware";
+import { authMiddleware } from "../../middleware/auth.middleware";
+import { allowRoles } from "../../middleware/role.middleware";
 
 const router = Router();
 
-// CREATE (open to all users)
-router.post("/", verifyToken, controller.addMaterial);
+/**
+ * CREATE MATERIAL
+ * Admin + Manager
+ */
+router.post(
+  "/",
+  authMiddleware,
+  allowRoles(["admin", "manager"]),
+  controller.addMaterial
+);
 
-// ✅ FIXED: remove "projects" typo → use "project"
-router.get("/project/:projectId", verifyToken, controller.getByProject);
+/**
+ * GET MATERIALS BY PROJECT
+ * Admin + Manager + Client (read-only)
+ */
+router.get(
+  "/project/:projectId",
+  authMiddleware,
+  allowRoles(["admin", "manager", "client"]),
+  controller.getByProject
+);
 
-// UPDATE (open to all users)
-router.put("/:id", verifyToken, controller.updateMaterial);
+/**
+ * UPDATE MATERIAL
+ * Admin + Manager
+ */
+router.put(
+  "/:id",
+  authMiddleware,
+  allowRoles(["admin", "manager"]),
+  controller.updateMaterial
+);
 
-// DELETE (you said remove restrictions → remove admin-only)
-router.delete("/:id", verifyToken, controller.deleteMaterial);
+/**
+ * DELETE MATERIAL
+ * Admin only (safer rule)
+ */
+router.delete(
+  "/:id",
+  authMiddleware,
+  allowRoles(["admin"]),
+  controller.deleteMaterial
+);
 
 export default router;

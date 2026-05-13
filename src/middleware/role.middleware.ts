@@ -1,14 +1,17 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
+import { AuthRequest } from "./auth.middleware";
 
-export const requireRole = (roles: string | string[]) => {
-  return (req: any, res: Response, next: NextFunction) => {
-    const userRole = req.user?.role;
+export const allowRoles = (roles: string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
 
-    const allowedRoles = Array.isArray(roles) ? roles : [roles];
-
-    if (!allowedRoles.includes(userRole)) {
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({
-        message: "Forbidden: Access denied",
+        message: "Access denied",
       });
     }
 

@@ -1,24 +1,39 @@
 console.log("🔥 DASHBOARD ROUTE LOADED");
+
 import { Router } from "express";
+import { authMiddleware } from "../middleware/auth.middleware";
+import { allowRoles } from "../middleware/role.middleware";
+
 import * as controller from "../controllers/dashboard.controller";
-import { verifyToken } from "../middleware/auth.middleware";
-import { requireRole } from "../middleware/role.middleware";
 
 const router = Router();
-router.get("/", verifyToken, (req, res) => {
-  res.json({
-    message: "General dashboard working 🚀",
-    stats: {
-      users: 1,
-      projects: 2,
-      tasks: 5,
-    },
-  });
-});
+
+/**
+ * GENERAL DASHBOARD (all logged-in users)
+ */
+router.get(
+  "/",
+  authMiddleware,
+  allowRoles(["admin", "manager", "client"]),
+  (req, res) => {
+    res.json({
+      message: "General dashboard working 🚀",
+      stats: {
+        users: 1,
+        projects: 2,
+        tasks: 5,
+      },
+    });
+  }
+);
+
+/**
+ * PROJECT DASHBOARD (role-based access)
+ */
 router.get(
   "/:project_id",
-  verifyToken,
-  requireRole(["admin", "user"]),
+  authMiddleware,
+  allowRoles(["admin", "manager", "client"]),
   controller.getProjectDashboard
 );
 
