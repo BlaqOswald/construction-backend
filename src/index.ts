@@ -21,45 +21,26 @@ import userRoutes from "./modules/users/users.routes";
 const app = express();
 
 /**
- * =====================================================
- * 🔥 CORS - MUST BE FIRST (VERY IMPORTANT FIX)
- * =====================================================
+ * =========================================
+ * 🔥 CORS CONFIG (FIXED FOR YOUR ERROR)
+ * =========================================
  */
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-];
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow mobile apps / Postman (no origin)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Not allowed by CORS"));
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
 /**
- * 🔥 HANDLE PRE-FLIGHT REQUESTS (CRITICAL FIX)
- */
-app.options("*", cors());
-
-/**
- * PARSE JSON
+ * JSON BODY PARSER
  */
 app.use(express.json());
 
 /**
- * TRUST PROXY (FOR RENDER / NGROK)
+ * TRUST PROXY (Render / cloud hosting)
  */
 app.set("trust proxy", true);
 
@@ -84,20 +65,20 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 /**
- * ROOT TEST
+ * ROOT TEST ROUTE
  */
 app.get("/", (_req: Request, res: Response) => {
   res.send("API working 🚀");
 });
 
 /**
- * DB CHECK
+ * DB CONNECTION TEST
  */
 pool.query("SELECT NOW()")
-  .then(res => {
+  .then((res) => {
     console.log("✅ DB CONNECTED:", res.rows[0]);
   })
-  .catch(err => {
+  .catch((err) => {
     console.error("❌ DB CONNECTION FAILED:", err);
   });
 
