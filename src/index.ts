@@ -23,7 +23,15 @@ const app = express();
 // ----------------------------------------------------
 // MIDDLEWARE
 // ----------------------------------------------------
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://your-frontend-domain.com"
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // ✅ TRUST PROXY (IMPORTANT FOR NGROK IPs)
