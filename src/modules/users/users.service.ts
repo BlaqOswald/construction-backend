@@ -1,5 +1,6 @@
 import { User } from "./users.entity";
 import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcrypt";
 
 let users: User[] = [];
 
@@ -9,8 +10,11 @@ export const createUser = (data: any) => {
     name: data.name,
     email: data.email,
     role: data.role,
-    password: undefined,
+
+    password: null,
+    tempPassword: data.tempPassword || "123456",
     mustSetPassword: true,
+
     projectIds: data.projectIds || [],
   };
 
@@ -20,27 +24,23 @@ export const createUser = (data: any) => {
 
 export const getUsers = () => users;
 
-export const setPassword = (email: string, password: string) => {
+export const setPassword = async (
+  email: string,
+  password: string
+) => {
   const user = users.find((u) => u.email === email);
 
   if (!user) {
     throw new Error("User not found");
   }
 
-  user.password = password;
+  const hashed = await bcrypt.hash(password, 10);
+
+  user.password = hashed;
+  user.tempPassword = null;
   user.mustSetPassword = false;
 
-  return { message: "Password created successfully" };
-};
-
-export const login = (email: string, password: string) => {
-  const user = users.find(
-    (u) => u.email === email && u.password === password
-  );
-
-  if (!user) {
-    throw new Error("Invalid credentials");
-  }
-
-  return user;
+  return {
+    message: "Password set successfully",
+  };
 };

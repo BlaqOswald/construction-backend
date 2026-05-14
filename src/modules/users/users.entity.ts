@@ -1,13 +1,13 @@
-export type UserRole = "admin" | "manager" | "client";
-
 export interface User {
   id: string;
   name: string;
   email: string;
 
-  role: UserRole;
+  role: "admin" | "manager" | "client";
 
-  password?: string;
+  password?: string | null;
+  tempPassword?: string | null;
+
   mustSetPassword: boolean;
 
   projectIds: string[];
