@@ -20,44 +20,79 @@ import userRoutes from "./modules/users/users.routes";
 
 const app = express();
 
-// ----------------------------------------------------
-// MIDDLEWARE
-// ----------------------------------------------------
+/**
+ * =====================================================
+ * 🔥 CORS - MUST BE FIRST (VERY IMPORTANT FIX)
+ * =====================================================
+ */
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://your-frontend-domain.com"
-    ],
+    origin: function (origin, callback) {
+      // allow mobile apps / Postman (no origin)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
+/**
+ * 🔥 HANDLE PRE-FLIGHT REQUESTS (CRITICAL FIX)
+ */
+app.options("*", cors());
+
+/**
+ * PARSE JSON
+ */
 app.use(express.json());
 
-// ✅ TRUST PROXY (IMPORTANT FOR NGROK IPs)
+/**
+ * TRUST PROXY (FOR RENDER / NGROK)
+ */
 app.set("trust proxy", true);
 
-// 🔥 REQUEST LOGGING MIDDLEWARE (REMOTE ACCESS PROOF)
+/**
+ * REQUEST LOGGER
+ */
 app.use((req: Request, _res: Response, next: NextFunction) => {
   const ip =
     req.headers["x-forwarded-for"] ||
     req.socket.remoteAddress;
 
-  console.log("📡 REQUEST LOG -> IP:", ip, "METHOD:", req.method, "URL:", req.url);
+  console.log(
+    "📡 REQUEST LOG -> IP:",
+    ip,
+    "METHOD:",
+    req.method,
+    "URL:",
+    req.url
+  );
 
   next();
 });
 
-// ----------------------------------------------------
-// ROOT TEST
-// ----------------------------------------------------
+/**
+ * ROOT TEST
+ */
 app.get("/", (_req: Request, res: Response) => {
   res.send("API working 🚀");
 });
 
-// ----------------------------------------------------
-// DB CONNECTION CHECK
-// ----------------------------------------------------
+/**
+ * DB CHECK
+ */
 pool.query("SELECT NOW()")
   .then(res => {
     console.log("✅ DB CONNECTED:", res.rows[0]);
@@ -66,9 +101,9 @@ pool.query("SELECT NOW()")
     console.error("❌ DB CONNECTION FAILED:", err);
   });
 
-// ----------------------------------------------------
-// ROUTES
-// ----------------------------------------------------
+/**
+ * ROUTES
+ */
 app.use("/dashboard", dashboardRoutes);
 app.use("/auth", authRoutes);
 app.use("/projects", projectRoutes);
@@ -78,16 +113,16 @@ app.use("/materials", materialRoutes);
 app.use("/subcontractors", subcontractorRoutes);
 app.use("/reports", reportRoutes);
 
-// ----------------------------------------------------
-// 404 HANDLER
-// ----------------------------------------------------
+/**
+ * 404 HANDLER
+ */
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ message: "Not Found" });
 });
 
-// ----------------------------------------------------
-// GLOBAL ERROR HANDLER
-// ----------------------------------------------------
+/**
+ * GLOBAL ERROR HANDLER
+ */
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error("[Global error]", err);
 
@@ -96,9 +131,9 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-// ----------------------------------------------------
-// START SERVER
-// ----------------------------------------------------
+/**
+ * START SERVER
+ */
 const PORT = Number(process.env.PORT) || 8080;
 
 app.listen(PORT, "0.0.0.0", () => {
