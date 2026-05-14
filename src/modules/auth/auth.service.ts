@@ -18,7 +18,9 @@ export const loginUser = async (email: string, password: string) => {
     throw new Error("User not found");
   }
 
-  // STEP 1: FIRST LOGIN CHECK (TEMP PASSWORD)
+  /**
+   * STEP 1: FIRST LOGIN (TEMP PASSWORD FLOW)
+   */
   if (user.must_set_password) {
     const isTempValid = password === user.temp_password;
 
@@ -32,7 +34,9 @@ export const loginUser = async (email: string, password: string) => {
     };
   }
 
-  // STEP 2: NORMAL LOGIN
+  /**
+   * STEP 2: NORMAL LOGIN
+   */
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
@@ -44,7 +48,7 @@ export const loginUser = async (email: string, password: string) => {
       id: user.id,
       email: user.email,
       role: user.role,
-      projectIds: user.projectids || [],
+      projectIds: user.project_ids || [],
     },
     process.env.JWT_SECRET!,
     { expiresIn: "1d" }
