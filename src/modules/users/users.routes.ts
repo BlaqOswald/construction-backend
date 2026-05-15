@@ -6,8 +6,7 @@ import { allowRoles } from "../../middleware/role.middleware";
 const router = Router();
 
 /**
- * ADMIN ONLY
- * Create users
+ * ADMIN ONLY - create users
  */
 router.post(
   "/",
@@ -17,8 +16,7 @@ router.post(
 );
 
 /**
- * ADMIN ONLY
- * View all users
+ * ADMIN ONLY - get users
  */
 router.get(
   "/",
@@ -28,12 +26,8 @@ router.get(
 );
 
 /**
- * PUBLIC
- * First-time password setup
+ * FIRST TIME PASSWORD SETUP (PUBLIC)
  */
-router.post(
-  "/set-password",
-  controller.setPassword
-);
+router.post("/set-password", controller.setPassword);
 
 export default router;

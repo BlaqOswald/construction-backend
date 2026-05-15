@@ -1,14 +1,19 @@
 import { Router } from "express";
 import * as controller from "./materials.controller";
-
 import { authMiddleware } from "../../middleware/auth.middleware";
 import { allowRoles } from "../../middleware/role.middleware";
 
 const router = Router();
 
 /**
+ * =========================
+ * MATERIAL ROUTES (RBAC)
+ * =========================
+ */
+
+/**
  * CREATE MATERIAL
- * Admin + Manager
+ * Admin + Manager only
  */
 router.post(
   "/",
@@ -19,7 +24,10 @@ router.post(
 
 /**
  * GET MATERIALS BY PROJECT
- * Admin + Manager + Client (read-only)
+ * Admin + Manager + Client
+ *
+ * Client is read-only.
+ * Controller should verify project access.
  */
 router.get(
   "/project/:projectId",
@@ -30,7 +38,7 @@ router.get(
 
 /**
  * UPDATE MATERIAL
- * Admin + Manager
+ * Admin + Manager only
  */
 router.put(
   "/:id",
@@ -41,7 +49,7 @@ router.put(
 
 /**
  * DELETE MATERIAL
- * Admin only (safer rule)
+ * Admin only
  */
 router.delete(
   "/:id",

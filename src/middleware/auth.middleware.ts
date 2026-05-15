@@ -6,7 +6,7 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     role: "admin" | "manager" | "client";
-    projectIds?: string[];
+    projectIds: string[];
   };
 }
 
@@ -18,8 +18,6 @@ export const authMiddleware = (
   try {
     const authHeader = req.headers.authorization;
 
-    console.log("AUTH HEADER:", authHeader);
-
     if (!authHeader) {
       return res.status(401).json({
         message: "No token provided",
@@ -28,21 +26,16 @@ export const authMiddleware = (
 
     if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
-        message: "Invalid token format. Use Bearer <token>",
+        message: "Invalid token format",
       });
     }
 
     const token = authHeader.split(" ")[1];
 
-    const secret = process.env.JWT_SECRET;
-
-    if (!secret) {
-      return res.status(500).json({
-        message: "JWT_SECRET missing",
-      });
-    }
-
-    const decoded = jwt.verify(token, secret) as JwtPayload;
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET!
+    ) as JwtPayload;
 
     req.user = {
       id: decoded.id,
@@ -52,9 +45,7 @@ export const authMiddleware = (
     };
 
     next();
-  } catch (error: any) {
-    console.log("JWT ERROR:", error.message);
-
+  } catch (error) {
     return res.status(401).json({
       message: "Invalid or expired token",
     });

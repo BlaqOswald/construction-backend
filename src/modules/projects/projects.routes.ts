@@ -7,7 +7,7 @@ const router = Router();
 
 /**
  * CREATE PROJECT
- * Admin + Manager
+ * Admin + Manager only
  */
 router.post(
   "/",
@@ -19,6 +19,10 @@ router.post(
 /**
  * GET ALL PROJECTS
  * Admin + Manager + Client
+ *
+ * NOTE:
+ * Client filtering happens inside controller.getProjects
+ * using req.user.projectIds
  */
 router.get(
   "/",
@@ -30,6 +34,9 @@ router.get(
 /**
  * GET SINGLE PROJECT
  * Admin + Manager + Client
+ *
+ * NOTE:
+ * Controller should verify client owns project
  */
 router.get(
   "/:id",
@@ -40,7 +47,7 @@ router.get(
 
 /**
  * UPDATE PROJECT
- * Admin + Manager
+ * Admin + Manager only
  */
 router.put(
   "/:id",

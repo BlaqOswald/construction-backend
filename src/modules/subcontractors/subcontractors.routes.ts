@@ -1,17 +1,61 @@
 import { Router } from "express";
 import * as controller from "./subcontractors.controller";
+import { authMiddleware } from "../../middleware/auth.middleware";
+import { allowRoles } from "../../middleware/role.middleware";
 
 const router = Router();
 
-router.post("/", controller.addSubcontractor);
-router.get("/project/:projectId", controller.getByProject);
+/**
+ * =========================
+ * SUBCONTRACTOR ROUTES (RBAC)
+ * =========================
+ */
 
-// ❌ OLD (wrong)
-// router.delete("/:id", controller.deleteSubcontractor);
+/**
+ * CREATE SUBCONTRACTOR
+ * Admin + Manager only
+ */
+router.post(
+  "/",
+  authMiddleware,
+  allowRoles(["admin", "manager"]),
+  controller.addSubcontractor
+);
 
-// ✅ FIXED (correct name)
-router.delete("/:id", controller.deleteSub);
+/**
+ * GET SUBCONTRACTORS BY PROJECT
+ * Admin + Manager + Client (read-only)
+ *
+ * IMPORTANT:
+ * Controller must enforce project ownership check
+ */
+router.get(
+  "/project/:projectId",
+  authMiddleware,
+  allowRoles(["admin", "manager", "client"]),
+  controller.getByProject
+);
 
-router.put("/:id/payment", controller.addPayment);
+/**
+ * DELETE SUBCONTRACTOR
+ * Admin only (safe rule)
+ */
+router.delete(
+  "/:id",
+  authMiddleware,
+  allowRoles(["admin"]),
+  controller.deleteSub
+);
+
+/**
+ * ADD PAYMENT
+ * Admin + Manager only
+ */
+router.put(
+  "/:id/payment",
+  authMiddleware,
+  allowRoles(["admin", "manager"]),
+  controller.addPayment
+);
 
 export default router;

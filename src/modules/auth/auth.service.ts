@@ -11,20 +11,19 @@ export const findUserByEmail = async (email: string) => {
   return result.rows[0];
 };
 
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (
+  email: string,
+  password: string
+) => {
   const user = await findUserByEmail(email);
 
   if (!user) {
     throw new Error("User not found");
   }
 
-  /**
-   * STEP 1: FIRST LOGIN (TEMP PASSWORD FLOW)
-   */
+  // FIRST LOGIN TEMP PASSWORD FLOW
   if (user.must_set_password) {
-    const isTempValid = password === user.temp_password;
-
-    if (!isTempValid) {
+    if (password !== user.temp_password) {
       throw new Error("Invalid temporary password");
     }
 
@@ -34,10 +33,11 @@ export const loginUser = async (email: string, password: string) => {
     };
   }
 
-  /**
-   * STEP 2: NORMAL LOGIN
-   */
-  const isMatch = await bcrypt.compare(password, user.password);
+  // NORMAL LOGIN
+  const isMatch = await bcrypt.compare(
+    password,
+    user.password
+  );
 
   if (!isMatch) {
     throw new Error("Invalid password");
@@ -51,11 +51,19 @@ export const loginUser = async (email: string, password: string) => {
       projectIds: user.project_ids || [],
     },
     process.env.JWT_SECRET!,
-    { expiresIn: "1d" }
+    {
+      expiresIn: "1d",
+    }
   );
 
   return {
     token,
-    user,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      projectIds: user.project_ids || [],
+    },
   };
 };
