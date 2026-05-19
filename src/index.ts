@@ -22,27 +22,40 @@ const app = express();
 
 /**
  * =========================
- * CORS CONFIG
+ * TRUST PROXY (Render)
  * =========================
  */
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "https://construction-frontend-three.vercel.app",
-];
+app.set("trust proxy", true);
 
+/**
+ * =========================
+ * JSON BODY PARSER
+ * =========================
+ */
+app.use(express.json());
+
+/**
+ * =========================
+ * CORS (PRODUCTION FIX)
+ * =========================
+ */
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow postman/mobile/no-origin requests
+    origin: (origin, callback) => {
+      // allow mobile apps, postman, curl
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      // allow localhost + ALL vercel deployments
+      if (
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1") ||
+        origin.endsWith(".vercel.app")
+      ) {
         return callback(null, true);
       }
 
-      console.log("❌ BLOCKED BY CORS:", origin);
-      return callback(new Error(`CORS blocked: ${origin}`));
+      console.log("❌ BLOCKED CORS:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -51,61 +64,33 @@ app.use(
 );
 
 /**
- * IMPORTANT: HANDLE PREFLIGHT REQUESTS
+ * =========================
+ * FIX PREFLIGHT (IMPORTANT)
+ * NO "*" HERE (CAUSES YOUR ERROR)
+ * =========================
  */
 app.options(/.*/, cors());
 
 /**
- * JSON BODY PARSER
- */
-app.use(express.json());
-
-/**
- * TRUST PROXY
- */
-app.set("trust proxy", true);
-
-/**
+ * =========================
  * REQUEST LOGGER
+ * =========================
  */
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  const ip =
-    req.headers["x-forwarded-for"] ||
-    req.socket.remoteAddress;
-
   console.log(
-    "📡 REQUEST:",
+    "📡",
     req.method,
     req.url,
-    "IP:",
-    ip,
-    "ORIGIN:",
+    "| ORIGIN:",
     req.headers.origin
   );
-
   next();
 });
 
 /**
- * ROOT TEST
- */
-app.get("/", (_req: Request, res: Response) => {
-  res.send("API working 🚀");
-});
-
-/**
- * DB TEST
- */
-pool.query("SELECT NOW()")
-  .then((res) => {
-    console.log("✅ DB CONNECTED:", res.rows[0]);
-  })
-  .catch((err) => {
-    console.error("❌ DB FAILED:", err);
-  });
-
-/**
+ * =========================
  * ROUTES
+ * =========================
  */
 app.use("/dashboard", dashboardRoutes);
 app.use("/auth", authRoutes);
@@ -117,34 +102,54 @@ app.use("/subcontractors", subcontractorRoutes);
 app.use("/reports", reportRoutes);
 
 /**
- * 404
+ * =========================
+ * ROOT TEST
+ * =========================
+ */
+app.get("/", (_req: Request, res: Response) => {
+  res.send("API working 🚀");
+});
+
+/**
+ * =========================
+ * DB CHECK
+ * =========================
+ */
+pool
+  .query("SELECT NOW()")
+  .then((res) => {
+    console.log("✅ DB CONNECTED:", res.rows[0]);
+  })
+  .catch((err) => {
+    console.error("❌ DB FAILED:", err);
+  });
+
+/**
+ * =========================
+ * 404 HANDLER
+ * =========================
  */
 app.use((_req: Request, res: Response) => {
-  res.status(404).json({
-    message: "Not Found",
+  res.status(404).json({ message: "Not Found" });
+});
+
+/**
+ * =========================
+ * GLOBAL ERROR HANDLER
+ * =========================
+ */
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("🔥 ERROR:", err.message);
+
+  res.status(500).json({
+    message: err.message || "Internal Server Error",
   });
 });
 
 /**
- * GLOBAL ERROR HANDLER
- */
-app.use(
-  (
-    err: any,
-    _req: Request,
-    res: Response,
-    _next: NextFunction
-  ) => {
-    console.error("🔥 GLOBAL ERROR:", err.message);
-
-    res.status(err.status || 500).json({
-      message: err.message || "Internal Server Error",
-    });
-  }
-);
-
-/**
+ * =========================
  * START SERVER
+ * =========================
  */
 const PORT = Number(process.env.PORT) || 8080;
 
