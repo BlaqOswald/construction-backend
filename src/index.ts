@@ -4,9 +4,9 @@ dns.setDefaultResultOrder("ipv4first");
 import dotenv from "dotenv";
 dotenv.config();
 
-import { pool } from "./db";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
+import { pool } from "./db";
 
 // routes
 import authRoutes from "./modules/auth/auth.routes";
@@ -21,22 +21,39 @@ import userRoutes from "./modules/users/users.routes";
 const app = express();
 
 /**
- * =========================================
- * 🔥 CORS CONFIG (FIXED FOR YOUR ERROR)
- * =========================================
+ * =========================
+ * CORS CONFIG
+ * =========================
  */
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://construction-frontend-three.vercel.app",
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "https://construction-frontend-hy0nhfu9r-blaqoswalds-projects.vercel.app"
-    ],
+    origin: function (origin, callback) {
+      // allow postman/mobile/no-origin requests
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("❌ BLOCKED BY CORS:", origin);
+      return callback(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
+
+/**
+ * IMPORTANT: HANDLE PREFLIGHT REQUESTS
+ */
+app.options(/.*/, cors());
 
 /**
  * JSON BODY PARSER
@@ -44,7 +61,7 @@ app.use(
 app.use(express.json());
 
 /**
- * TRUST PROXY (Render / cloud hosting)
+ * TRUST PROXY
  */
 app.set("trust proxy", true);
 
@@ -57,33 +74,34 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
     req.socket.remoteAddress;
 
   console.log(
-    "📡 REQUEST LOG -> IP:",
-    ip,
-    "METHOD:",
+    "📡 REQUEST:",
     req.method,
-    "URL:",
-    req.url
+    req.url,
+    "IP:",
+    ip,
+    "ORIGIN:",
+    req.headers.origin
   );
 
   next();
 });
 
 /**
- * ROOT TEST ROUTE
+ * ROOT TEST
  */
 app.get("/", (_req: Request, res: Response) => {
   res.send("API working 🚀");
 });
 
 /**
- * DB CONNECTION TEST
+ * DB TEST
  */
 pool.query("SELECT NOW()")
   .then((res) => {
     console.log("✅ DB CONNECTED:", res.rows[0]);
   })
   .catch((err) => {
-    console.error("❌ DB CONNECTION FAILED:", err);
+    console.error("❌ DB FAILED:", err);
   });
 
 /**
@@ -99,22 +117,31 @@ app.use("/subcontractors", subcontractorRoutes);
 app.use("/reports", reportRoutes);
 
 /**
- * 404 HANDLER
+ * 404
  */
 app.use((_req: Request, res: Response) => {
-  res.status(404).json({ message: "Not Found" });
+  res.status(404).json({
+    message: "Not Found",
+  });
 });
 
 /**
  * GLOBAL ERROR HANDLER
  */
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("[Global error]", err);
+app.use(
+  (
+    err: any,
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    console.error("🔥 GLOBAL ERROR:", err.message);
 
-  res.status(err.status || 500).json({
-    message: err.message || "Internal Server Error",
-  });
-});
+    res.status(err.status || 500).json({
+      message: err.message || "Internal Server Error",
+    });
+  }
+);
 
 /**
  * START SERVER
