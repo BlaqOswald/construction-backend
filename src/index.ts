@@ -16,6 +16,7 @@ import taskRoutes from "./modules/tasks/tasks.routes";
 import materialRoutes from "./modules/materials/materials.routes";
 import subcontractorRoutes from "./modules/subcontractors/subcontractors.routes";
 import reportRoutes from "./modules/reports/reports.routes";
+import supplierRoutes from "./modules/suppliers/suppliers.routes";
 import userRoutes from "./modules/users/users.routes";
 
 const app = express();
@@ -100,6 +101,7 @@ app.use("/tasks", taskRoutes);
 app.use("/materials", materialRoutes);
 app.use("/subcontractors", subcontractorRoutes);
 app.use("/reports", reportRoutes);
+app.use("/suppliers", supplierRoutes);
 
 /**
  * =========================
