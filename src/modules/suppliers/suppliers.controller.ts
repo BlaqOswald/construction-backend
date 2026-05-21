@@ -9,10 +9,10 @@ import {
   addPaymentService,
   updateSupplierService,
   deleteSupplierService,
-
   updateDeliveryService,
   deleteDeliveryService,
   payDeliveryService,
+  bulkPaymentService,
 } from "./suppliers.service";
 
 // ======================
@@ -245,6 +245,17 @@ export const payDelivery = async (
 
     res.status(500).json({
       error: "Payment failed",
+    });
+  }
+};
+export const bulkPayment = async (req: Request, res: Response) => {
+  try {
+    const result = await bulkPaymentService(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Bulk payment failed",
     });
   }
 };

@@ -565,3 +565,94 @@ export const payDeliveryService =
       throw err;
     }
   };
+
+// ======================
+// BULK ENGINE 
+// ======================
+  export const bulkPaymentService = async (data: any) => {
+  const {
+    supplier_id,
+    amount_paid,
+    payment_date,
+    note,
+  } = data;
+
+  let remaining = Number(amount_paid);
+
+  // 1. GET UNPAID + PARTIAL ITEMS (FIFO)
+  const deliveries = await pool.query(
+    `
+    SELECT *
+    FROM supplier_deliveries
+    WHERE supplier_id = $1
+    AND payment_status != 'Paid'
+    ORDER BY created_at ASC
+    `,
+    [supplier_id]
+  );
+
+  for (const d of deliveries.rows) {
+    if (remaining <= 0) break;
+
+    // 2. GET already paid for this delivery
+    const paidResult = await pool.query(
+      `
+      SELECT COALESCE(SUM(amount_paid),0) as paid
+      FROM supplier_payments
+      WHERE delivery_id = $1
+      `,
+      [d.id]
+    );
+
+    const alreadyPaid = Number(paidResult.rows[0].paid);
+    const balance = Number(d.total_cost) - alreadyPaid;
+
+    if (balance <= 0) continue;
+
+    let payNow = 0;
+
+    if (remaining >= balance) {
+      payNow = balance;
+    } else {
+      payNow = remaining;
+    }
+
+    // 3. INSERT PAYMENT FOR THIS ITEM
+    await pool.query(
+      `
+      INSERT INTO supplier_payments
+      (supplier_id, delivery_id, amount_paid, payment_date, note)
+      VALUES ($1,$2,$3,$4,$5)
+      `,
+      [
+        supplier_id,
+        d.id,
+        payNow,
+        payment_date,
+        note || null,
+      ]
+    );
+
+    remaining -= payNow;
+
+    // 4. UPDATE STATUS
+    const newBalance = balance - payNow;
+
+    let status = "Partial";
+    if (newBalance === 0) status = "Paid";
+
+    await pool.query(
+      `
+      UPDATE supplier_deliveries
+      SET payment_status = $1
+      WHERE id = $2
+      `,
+      [status, d.id]
+    );
+  }
+
+  return {
+    success: true,
+    remaining_unallocated: remaining,
+  };
+};
