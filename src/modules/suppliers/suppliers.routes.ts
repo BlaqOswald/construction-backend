@@ -7,6 +7,10 @@ import {
   addPayment,
   updateSupplier,
   deleteSupplier,
+
+  updateDelivery,
+  deleteDelivery,
+  payDelivery,
 } from "./suppliers.controller";
 
 const router = Router();
@@ -25,6 +29,12 @@ router.delete("/:id", deleteSupplier);
 
 // DELIVERIES
 router.post("/delivery", addDelivery);
+
+router.put("/delivery/:id", updateDelivery);
+
+router.delete("/delivery/:id", deleteDelivery);
+
+router.post("/delivery/pay", payDelivery);
 
 // PAYMENTS
 router.post("/payment", addPayment);

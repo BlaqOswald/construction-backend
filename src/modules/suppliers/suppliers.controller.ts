@@ -1,3 +1,5 @@
+// suppliers.controller.ts
+
 import { Request, Response } from "express";
 
 import {
@@ -7,6 +9,10 @@ import {
   addPaymentService,
   updateSupplierService,
   deleteSupplierService,
+
+  updateDeliveryService,
+  deleteDeliveryService,
+  payDeliveryService,
 } from "./suppliers.service";
 
 // ======================
@@ -18,7 +24,9 @@ export const createSupplier = async (
 ) => {
   try {
     const supplier =
-      await createSupplierService(req.body);
+      await createSupplierService(
+        req.body
+      );
 
     res.json(supplier);
   } catch (err) {
@@ -33,29 +41,30 @@ export const createSupplier = async (
 // ======================
 // GET SUPPLIERS BY PROJECT
 // ======================
-export const getSuppliersByProject = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const projectId = String(
-      req.params.projectId
-    );
-
-    const data =
-      await getSuppliersByProjectService(
-        projectId
+export const getSuppliersByProject =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const projectId = String(
+        req.params.projectId
       );
 
-    res.json(data);
-  } catch (err) {
-    console.error(err);
+      const data =
+        await getSuppliersByProjectService(
+          projectId
+        );
 
-    res.status(500).json({
-      error: "Fetch suppliers failed",
-    });
-  }
-};
+      res.json(data);
+    } catch (err) {
+      console.error(err);
+
+      res.status(500).json({
+        error: "Fetch suppliers failed",
+      });
+    }
+  };
 
 // ======================
 // ADD DELIVERY
@@ -66,7 +75,9 @@ export const addDelivery = async (
 ) => {
   try {
     const delivery =
-      await addDeliveryService(req.body);
+      await addDeliveryService(
+        req.body
+      );
 
     res.json(delivery);
   } catch (err) {
@@ -87,7 +98,9 @@ export const addPayment = async (
 ) => {
   try {
     const payment =
-      await addPaymentService(req.body);
+      await addPaymentService(
+        req.body
+      );
 
     res.json(payment);
   } catch (err) {
@@ -102,48 +115,136 @@ export const addPayment = async (
 // ======================
 // UPDATE SUPPLIER
 // ======================
-export const updateSupplier = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const id = String(req.params.id);
-
-    const supplier =
-      await updateSupplierService(
-        id,
-        req.body
+export const updateSupplier =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const id = String(
+        req.params.id
       );
 
-    res.json(supplier);
-  } catch (err) {
-    console.error(err);
+      const supplier =
+        await updateSupplierService(
+          id,
+          req.body
+        );
 
-    res.status(500).json({
-      error: "Update supplier failed",
-    });
-  }
-};
+      res.json(supplier);
+    } catch (err) {
+      console.error(err);
+
+      res.status(500).json({
+        error: "Update supplier failed",
+      });
+    }
+  };
 
 // ======================
 // DELETE SUPPLIER
 // ======================
-export const deleteSupplier = async (
+export const deleteSupplier =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const id = String(
+        req.params.id
+      );
+
+      const supplier =
+        await deleteSupplierService(
+          id
+        );
+
+      res.json(supplier);
+    } catch (err) {
+      console.error(err);
+
+      res.status(500).json({
+        error: "Delete supplier failed",
+      });
+    }
+  };
+
+// ======================
+// UPDATE DELIVERY
+// ======================
+export const updateDelivery =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const id = String(
+        req.params.id
+      );
+
+      const result =
+        await updateDeliveryService(
+          id,
+          req.body
+        );
+
+      res.json(result);
+    } catch (err) {
+      console.error(err);
+
+      res.status(500).json({
+        error: "Update delivery failed",
+      });
+    }
+  };
+
+// ======================
+// DELETE DELIVERY
+// ======================
+export const deleteDelivery =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const id = String(
+        req.params.id
+      );
+
+      const result =
+        await deleteDeliveryService(
+          id
+        );
+
+      res.json(result);
+    } catch (err) {
+      console.error(err);
+
+      res.status(500).json({
+        error: "Delete delivery failed",
+      });
+    }
+  };
+
+// ======================
+// PAY DELIVERY
+// ======================
+export const payDelivery = async (
   req: Request,
   res: Response
 ) => {
   try {
-    const id = String(req.params.id);
+    const result =
+      await payDeliveryService(
+        req.body
+      );
 
-    const supplier =
-      await deleteSupplierService(id);
-
-    res.json(supplier);
+    res.json(result);
   } catch (err) {
     console.error(err);
 
     res.status(500).json({
-      error: "Delete supplier failed",
+      error: "Payment failed",
     });
   }
 };
