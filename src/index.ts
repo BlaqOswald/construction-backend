@@ -19,6 +19,7 @@ import reportRoutes from "./modules/reports/reports.routes";
 import supplierRoutes from "./modules/suppliers/suppliers.routes";
 import userRoutes from "./modules/users/users.routes";
 import siteOverheadsRoutes from "./modules/siteoverheads/siteoverheads.routes";
+import preDevelopmentRoutes from "./modules/predevelopment/predevelopment.routes";
 
 const app = express();
 
@@ -104,6 +105,7 @@ app.use("/subcontractors", subcontractorRoutes);
 app.use("/reports", reportRoutes);
 app.use("/suppliers", supplierRoutes);
 app.use("/site-overheads", siteOverheadsRoutes);
+app.use("/predevelopment", preDevelopmentRoutes);
 
 /**
  * =========================
