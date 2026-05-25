@@ -49,3 +49,19 @@ export const addPayment = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Payment failed" });
   }
 };
+
+export const updateSub = async (req: Request, res: Response) => {
+  try {
+    const id = getId(req.params.id);
+
+    const result = await service.updateSubcontractor(
+      id,
+      req.body
+    );
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Update failed" });
+  }
+};
