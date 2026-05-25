@@ -57,7 +57,7 @@ export const getCategoriesByProject = async (
         c.*,
 
         COALESCE(
-          SUM(i.amount_paid),
+          SUM(i.amount_paid)::numeric,
           0
         ) AS total_spent,
 
