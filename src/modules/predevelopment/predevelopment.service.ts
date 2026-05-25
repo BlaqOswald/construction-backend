@@ -1,18 +1,11 @@
 import { pool } from "../../db";
 
-
-
 // =============================
 // CREATE CATEGORY
 // =============================
-
 export const addCategory = async (data: any) => {
   try {
-    const {
-      project_id,
-      name,
-      status,
-    } = data;
+    const { project_id, name, status } = data;
 
     const result = await pool.query(
       `
@@ -22,16 +15,10 @@ export const addCategory = async (data: any) => {
         name,
         status
       )
-
       VALUES ($1, $2, $3)
-
       RETURNING *
       `,
-      [
-        project_id,
-        name,
-        status || "Not Started",
-      ]
+      [project_id, name, status || "Not Started"]
     );
 
     return result.rows[0];
@@ -41,36 +28,36 @@ export const addCategory = async (data: any) => {
   }
 };
 
-
-
 // =============================
-// GET CATEGORIES BY PROJECT
+// GET CATEGORIES BY PROJECT (FIXED)
 // =============================
-
-export const getCategoriesByProject = async (
-  projectId: string
-) => {
+export const getCategoriesByProject = async (projectId: string) => {
   try {
     const result = await pool.query(
       `
       SELECT
-        c.*,
+        c.id,
+        c.name,
+        c.project_id,
+        c.status,
+        c.created_at,
 
-        COALESCE(
-          SUM(i.amount_paid)::numeric,
-          0
-        ) AS total_spent,
-
+        COALESCE(SUM(i.amount_paid), 0) AS total_spent,
         COUNT(i.id) AS transactions
 
       FROM predev_categories c
 
       LEFT JOIN predev_cost_items i
-      ON i.category_id = c.id
+        ON i.category_id = c.id
 
       WHERE c.project_id = $1
 
-      GROUP BY c.id
+      GROUP BY
+        c.id,
+        c.name,
+        c.project_id,
+        c.status,
+        c.created_at
 
       ORDER BY c.created_at DESC
       `,
@@ -84,34 +71,21 @@ export const getCategoriesByProject = async (
   }
 };
 
-
-
 // =============================
 // UPDATE CATEGORY
 // =============================
-
-export const updateCategory = async (
-  id: string,
-  data: any
-) => {
+export const updateCategory = async (id: string, data: any) => {
   try {
     const result = await pool.query(
       `
       UPDATE predev_categories
-
       SET
         name = $1,
         status = $2
-
       WHERE id = $3
-
       RETURNING *
       `,
-      [
-        data.name,
-        data.status,
-        id,
-      ]
+      [data.name, data.status, id]
     );
 
     return result.rows[0];
@@ -121,15 +95,10 @@ export const updateCategory = async (
   }
 };
 
-
-
 // =============================
 // DELETE CATEGORY
 // =============================
-
-export const deleteCategory = async (
-  id: string
-) => {
+export const deleteCategory = async (id: string) => {
   try {
     const result = await pool.query(
       `
@@ -147,15 +116,10 @@ export const deleteCategory = async (
   }
 };
 
-
-
 // =============================
 // CREATE COST ITEM
 // =============================
-
-export const addCostItem = async (
-  data: any
-) => {
+export const addCostItem = async (data: any) => {
   try {
     const {
       category_id,
@@ -183,12 +147,7 @@ export const addCostItem = async (
         status,
         notes
       )
-
-      VALUES
-      (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9
-      )
-
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       RETURNING *
       `,
       [
@@ -211,23 +170,16 @@ export const addCostItem = async (
   }
 };
 
-
-
 // =============================
 // GET ITEMS BY CATEGORY
 // =============================
-
-export const getItemsByCategory = async (
-  categoryId: string
-) => {
+export const getItemsByCategory = async (categoryId: string) => {
   try {
     const result = await pool.query(
       `
       SELECT *
       FROM predev_cost_items
-
       WHERE category_id = $1
-
       ORDER BY created_at DESC
       `,
       [categoryId]
@@ -240,21 +192,14 @@ export const getItemsByCategory = async (
   }
 };
 
-
-
 // =============================
 // UPDATE COST ITEM
 // =============================
-
-export const updateCostItem = async (
-  id: string,
-  data: any
-) => {
+export const updateCostItem = async (id: string, data: any) => {
   try {
     const result = await pool.query(
       `
       UPDATE predev_cost_items
-
       SET
         item_name = $1,
         description = $2,
@@ -264,9 +209,7 @@ export const updateCostItem = async (
         invoice_number = $6,
         status = $7,
         notes = $8
-
       WHERE id = $9
-
       RETURNING *
       `,
       [
@@ -289,15 +232,10 @@ export const updateCostItem = async (
   }
 };
 
-
-
 // =============================
 // DELETE COST ITEM
 // =============================
-
-export const deleteCostItem = async (
-  id: string
-) => {
+export const deleteCostItem = async (id: string) => {
   try {
     const result = await pool.query(
       `
@@ -315,20 +253,12 @@ export const deleteCostItem = async (
   }
 };
 
-
-
 // =============================
 // ADD ATTACHMENT
 // =============================
-
-export const addAttachment = async (
-  data: any
-) => {
+export const addAttachment = async (data: any) => {
   try {
-    const {
-      cost_item_id,
-      file_url,
-    } = data;
+    const { cost_item_id, file_url } = data;
 
     const result = await pool.query(
       `
@@ -337,15 +267,10 @@ export const addAttachment = async (
         cost_item_id,
         file_url
       )
-
       VALUES ($1, $2)
-
       RETURNING *
       `,
-      [
-        cost_item_id,
-        file_url,
-      ]
+      [cost_item_id, file_url]
     );
 
     return result.rows[0];
@@ -355,23 +280,16 @@ export const addAttachment = async (
   }
 };
 
-
-
 // =============================
 // GET ATTACHMENTS
 // =============================
-
-export const getAttachments = async (
-  costItemId: string
-) => {
+export const getAttachments = async (costItemId: string) => {
   try {
     const result = await pool.query(
       `
       SELECT *
       FROM predev_attachments
-
       WHERE cost_item_id = $1
-
       ORDER BY uploaded_at DESC
       `,
       [costItemId]
@@ -384,15 +302,10 @@ export const getAttachments = async (
   }
 };
 
-
-
 // =============================
 // DELETE ATTACHMENT
 // =============================
-
-export const deleteAttachment = async (
-  id: string
-) => {
+export const deleteAttachment = async (id: string) => {
   try {
     const result = await pool.query(
       `
