@@ -28,7 +28,7 @@ export const addSubcontractor = async (data: any) => {
 
   let total = Number(data.total_contract_cost || 0);
 
-  // ================= VARIABLE CALCULATION =================
+  // VARIABLE CALCULATION
   if (pricingType === "Variable") {
     total =
       Number(data.quantity || 0) *
@@ -36,7 +36,6 @@ export const addSubcontractor = async (data: any) => {
   }
 
   const paid = Number(data.amount_paid || 0);
-
   const balance = total - paid;
 
   const result = await pool.query(
@@ -54,10 +53,9 @@ export const addSubcontractor = async (data: any) => {
       payment_history,
 
       pricing_type,
-      measurement_type,
+      unit_type,
       quantity,
       unit_cost
-
      )
      VALUES (
       $1,$2,$3,$4,$5,
@@ -84,9 +82,7 @@ export const addSubcontractor = async (data: any) => {
                 amount_paid: paid,
                 payment_date:
                   data.payment_date ||
-                  new Date()
-                    .toISOString()
-                    .split("T")[0],
+                  new Date().toISOString().split("T")[0],
                 note: "Initial payment",
               },
             ]
@@ -94,7 +90,7 @@ export const addSubcontractor = async (data: any) => {
       ]),
 
       pricingType,
-      data.measurement_type || null,
+      data.unit_type || null,
       Number(data.quantity || 0),
       Number(data.unit_cost || 0),
     ]
@@ -104,9 +100,7 @@ export const addSubcontractor = async (data: any) => {
 };
 
 // ===================== GET =====================
-export const getByProject = async (
-  projectId: string
-) => {
+export const getByProject = async (projectId: string) => {
   const result = await pool.query(
     `SELECT * FROM subcontractors
      WHERE project_id = $1
@@ -118,9 +112,7 @@ export const getByProject = async (
 };
 
 // ===================== DELETE =====================
-export const deleteSubcontractor = async (
-  id: string
-) => {
+export const deleteSubcontractor = async (id: string) => {
   await pool.query(
     `DELETE FROM subcontractors WHERE id = $1`,
     [id]
@@ -128,22 +120,18 @@ export const deleteSubcontractor = async (
 };
 
 // ===================== UPDATE =====================
-export const updateSubcontractor = async (
-  id: string,
-  data: any
-) => {
+export const updateSubcontractor = async (id: string, data: any) => {
   const pricingType = data.pricing_type || "Fixed";
 
   let total = Number(data.total_contract_cost || 0);
 
-  // ================= VARIABLE CALCULATION =================
+  // VARIABLE CALCULATION
   if (pricingType === "Variable") {
     total =
       Number(data.quantity || 0) *
       Number(data.unit_cost || 0);
   }
 
-  // ================= GET EXISTING RECORD =================
   const existingRes = await pool.query(
     `SELECT * FROM subcontractors WHERE id = $1`,
     [id]
@@ -151,25 +139,18 @@ export const updateSubcontractor = async (
 
   const existing = existingRes.rows[0];
 
-  const history = parseHistory(
-    existing.payment_history
-  );
+  const history = parseHistory(existing.payment_history);
 
-  // ================= RECALCULATE PAID =================
   const historyPaid = history.reduce(
     (sum: number, p: any) =>
       sum + Number(p.amount_paid || 0),
     0
   );
 
-  const manualPaid = Number(
-    data.amount_paid || 0
-  );
+  const manualPaid = Number(data.amount_paid || 0);
 
   const totalPaid =
-    historyPaid > manualPaid
-      ? historyPaid
-      : manualPaid;
+    historyPaid > manualPaid ? historyPaid : manualPaid;
 
   const balance = total - totalPaid;
 
@@ -186,7 +167,7 @@ export const updateSubcontractor = async (
       balance = $7,
 
       pricing_type = $8,
-      measurement_type = $9,
+      unit_type = $9,
       quantity = $10,
       unit_cost = $11
 
@@ -195,7 +176,7 @@ export const updateSubcontractor = async (
     [
       data.name,
       data.task_work,
-      data.description,
+      data.description || null,
       data.payment_date || null,
 
       total,
@@ -203,7 +184,7 @@ export const updateSubcontractor = async (
       balance,
 
       pricingType,
-      data.measurement_type || null,
+      data.unit_type || null,
       Number(data.quantity || 0),
       Number(data.unit_cost || 0),
 
@@ -215,10 +196,7 @@ export const updateSubcontractor = async (
 };
 
 // ===================== PAYMENT UPDATE =====================
-export const addPayment = async (
-  id: string,
-  payment: any
-) => {
+export const addPayment = async (id: string, payment: any) => {
   const subRes = await pool.query(
     `SELECT * FROM subcontractors WHERE id = $1`,
     [id]
@@ -226,9 +204,7 @@ export const addPayment = async (
 
   const sub = subRes.rows[0];
 
-  const history = parseHistory(
-    sub.payment_history
-  );
+  const history = parseHistory(sub.payment_history);
 
   const newHistory = [
     ...history,
@@ -240,14 +216,12 @@ export const addPayment = async (
   ];
 
   const totalPaid = newHistory.reduce(
-    (sum, p) =>
-      sum + Number(p.amount_paid || 0),
+    (sum, p) => sum + Number(p.amount_paid || 0),
     0
   );
 
   const balance =
-    Number(sub.total_contract_cost || 0) -
-    totalPaid;
+    Number(sub.total_contract_cost || 0) - totalPaid;
 
   const fullyPaid = balance <= 0;
 
