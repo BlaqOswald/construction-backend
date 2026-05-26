@@ -1,49 +1,70 @@
 import { Request, Response } from "express";
 import * as service from "./tasks.service";
 
-// CREATE
+/* ================= SAFE PARAM HELPER ================= */
+const getId = (val: any) => (Array.isArray(val) ? val[0] : val);
+
+/* ================= CREATE ================= */
 export const createTask = async (req: Request, res: Response) => {
   try {
     const result = await service.createTask(req.body);
-    return res.status(201).json(result);
+    res.status(201).json(result);
   } catch (err) {
-    console.error("CREATE TASK ERROR:", err);
-    return res.status(500).json({ message: "Error creating task" });
+    console.error(err);
+    res.status(500).json({ message: "Error creating task" });
   }
 };
 
-// GET BY PROJECT
+/* ================= GET ================= */
 export const getByProject = async (req: Request, res: Response) => {
   try {
-    const projectId = String(req.params.projectId);
+    const projectId = getId(req.params.projectId);
     const result = await service.getByProject(projectId);
-    return res.json(result);
+    res.json(result);
   } catch (err) {
-    console.error("FETCH TASKS ERROR:", err);
-    return res.status(500).json({ message: "Error fetching tasks" });
+    res.status(500).json({ message: "Error fetching tasks" });
   }
 };
 
-// UPDATE
+/* ================= UPDATE ================= */
 export const updateTask = async (req: Request, res: Response) => {
   try {
-    const id = String(req.params.id);
+    const id = getId(req.params.id);
     const result = await service.updateTask(id, req.body);
-    return res.json(result);
+    res.json(result);
   } catch (err) {
-    console.error("UPDATE TASK ERROR:", err);
-    return res.status(500).json({ message: "Error updating task" });
+    console.error(err);
+    res.status(500).json({ message: "Error updating task" });
   }
 };
 
-// DELETE
+/* ================= DELETE ================= */
 export const deleteTask = async (req: Request, res: Response) => {
   try {
-    const id = String(req.params.id);
+    const id = getId(req.params.id);
     await service.deleteTask(id);
-    return res.json({ message: "Deleted successfully" });
+    res.json({ message: "Deleted successfully" });
   } catch (err) {
-    console.error("DELETE TASK ERROR:", err);
-    return res.status(500).json({ message: "Error deleting task" });
+    res.status(500).json({ message: "Error deleting task" });
+  }
+};
+
+/* ================= TASK LOGS ================= */
+export const addTaskLog = async (req: Request, res: Response) => {
+  try {
+    const result = await service.addTaskLog(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Error adding log" });
+  }
+};
+
+export const getTaskLogs = async (req: Request, res: Response) => {
+  try {
+    const taskId = getId(req.params.taskId);
+    const result = await service.getTaskLogs(taskId);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching logs" });
   }
 };

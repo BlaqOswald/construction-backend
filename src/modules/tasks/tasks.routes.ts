@@ -5,16 +5,9 @@ import { allowRoles } from "../../middleware/role.middleware";
 
 const router = Router();
 
-/**
- * =========================
- * TASK ROUTES (RBAC)
- * =========================
- */
+/* ================= TASKS ================= */
 
-/**
- * CREATE TASK
- * Admin + Manager only
- */
+// CREATE
 router.post(
   "/",
   authMiddleware,
@@ -22,13 +15,7 @@ router.post(
   controller.createTask
 );
 
-/**
- * GET TASKS BY PROJECT
- * Admin + Manager + Client (read-only)
- *
- * IMPORTANT:
- * Controller must enforce project access check
- */
+// GET BY PROJECT
 router.get(
   "/project/:projectId",
   authMiddleware,
@@ -36,10 +23,7 @@ router.get(
   controller.getByProject
 );
 
-/**
- * UPDATE TASK
- * Admin + Manager only
- */
+// UPDATE
 router.put(
   "/:id",
   authMiddleware,
@@ -47,15 +31,30 @@ router.put(
   controller.updateTask
 );
 
-/**
- * DELETE TASK
- * Admin only (strict rule)
- */
+// DELETE
 router.delete(
   "/:id",
   authMiddleware,
   allowRoles(["admin"]),
   controller.deleteTask
+);
+
+/* ================= TASK LOGS ================= */
+
+// ADD DAILY ENTRY
+router.post(
+  "/logs",
+  authMiddleware,
+  allowRoles(["admin", "manager"]),
+  controller.addTaskLog
+);
+
+// GET LOGS
+router.get(
+  "/logs/:taskId",
+  authMiddleware,
+  allowRoles(["admin", "manager", "client"]),
+  controller.getTaskLogs
 );
 
 export default router;
