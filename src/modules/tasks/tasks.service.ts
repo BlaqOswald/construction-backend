@@ -142,12 +142,21 @@ export const addTaskLog = async (data: any) => {
 };
 
 // GET LOGS
-export const getTaskLogs = async (taskId: string) => {
+export const getTaskLogs = async (projectId: string) => {
   const result = await pool.query(
-    `SELECT * FROM task_logs
-     WHERE task_id = $1
-     ORDER BY entry_date DESC`,
-    [taskId]
+    `
+    SELECT
+      tl.*,
+      t.activity AS task_name,
+      t.category,
+      t.task_type
+    FROM task_logs tl
+    JOIN tasks t
+      ON t.id = tl.task_id
+    WHERE t.project_id = $1
+    ORDER BY tl.entry_date DESC
+    `,
+    [projectId]
   );
 
   return result.rows;
