@@ -22,13 +22,7 @@ router.post(
   controller.addSubcontractor
 );
 
-/**
- * GET SUBCONTRACTORS BY PROJECT
- * Admin + Manager + Client (read-only)
- *
- * IMPORTANT:
- * Controller must enforce project ownership check
- */
+
 router.get(
   "/project/:projectId",
   authMiddleware,
@@ -36,10 +30,13 @@ router.get(
   controller.getByProject
 );
 
-/**
- * DELETE SUBCONTRACTOR
- * Admin only (safe rule)
- */
+router.put(
+  "/:id",
+  authMiddleware,
+  allowRoles(["admin", "manager"]),
+  controller.updateSub
+);
+
 router.delete(
   "/:id",
   authMiddleware,
