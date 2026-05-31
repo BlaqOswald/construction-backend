@@ -12,7 +12,7 @@ const router = Router();
  */
 
 /**
- * CREATE MATERIAL
+ * CREATE / UPSERT MATERIAL
  * Admin + Manager only
  */
 router.post(
@@ -24,10 +24,7 @@ router.post(
 
 /**
  * GET MATERIALS BY PROJECT
- * Admin + Manager + Client
- *
- * Client is read-only.
- * Controller should verify project access.
+ * Admin + Manager + Client (read-only)
  */
 router.get(
   "/project/:projectId",

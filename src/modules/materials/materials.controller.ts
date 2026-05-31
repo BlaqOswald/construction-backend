@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import * as service from "./materials.service";
 
-// CREATE
+// ======================
+// CREATE / UPSERT
+// ======================
 export const addMaterial = async (req: Request, res: Response) => {
   try {
     if (!req.body.project_id) {
@@ -19,14 +21,13 @@ export const addMaterial = async (req: Request, res: Response) => {
   }
 };
 
+// ======================
 // GET BY PROJECT
+// ======================
 export const getByProject = async (req: Request, res: Response) => {
   try {
-    console.log("PROJECT ID:", req.params.projectId);
-
     const projectId = String(req.params.projectId);
     const result = await service.getByProject(projectId);
-
     return res.json(result);
   } catch (err) {
     console.error("MATERIAL FETCH ERROR:", err);
@@ -37,7 +38,9 @@ export const getByProject = async (req: Request, res: Response) => {
   }
 };
 
+// ======================
 // UPDATE
+// ======================
 export const updateMaterial = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
@@ -52,7 +55,9 @@ export const updateMaterial = async (req: Request, res: Response) => {
   }
 };
 
+// ======================
 // DELETE
+// ======================
 export const deleteMaterial = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
