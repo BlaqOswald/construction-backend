@@ -7,7 +7,6 @@ const router = Router();
 
 /* ================= TASKS ================= */
 
-// CREATE
 router.post(
   "/",
   authMiddleware,
@@ -15,7 +14,6 @@ router.post(
   controller.createTask
 );
 
-// GET BY PROJECT
 router.get(
   "/project/:projectId",
   authMiddleware,
@@ -23,7 +21,6 @@ router.get(
   controller.getByProject
 );
 
-// UPDATE
 router.put(
   "/:id",
   authMiddleware,
@@ -31,7 +28,6 @@ router.put(
   controller.updateTask
 );
 
-// DELETE
 router.delete(
   "/:id",
   authMiddleware,
@@ -41,7 +37,8 @@ router.delete(
 
 /* ================= TASK LOGS ================= */
 
-// ADD DAILY ENTRY
+// NOTE: specific routes (/logs/...) must come BEFORE the wildcard (/:id)
+
 router.post(
   "/logs",
   authMiddleware,
@@ -49,14 +46,29 @@ router.post(
   controller.addTaskLog
 );
 
-// GET LOGS
+// GET all logs for a project
 router.get(
-  "/logs/:taskId",
+  "/logs/:projectId",
   authMiddleware,
   allowRoles(["admin", "manager", "client"]),
   controller.getTaskLogs
 );
 
+// UPDATE a single log entry
+router.put(
+  "/logs/:id",
+  authMiddleware,
+  allowRoles(["admin", "manager"]),
+  controller.updateTaskLog
+);
 
+// DELETE a single log entry
+router.delete(
+  "/logs/:id",
+  authMiddleware,
+  allowRoles(["admin", "manager"]),
+  controller.deleteTaskLog
+);
 
 export default router;
+

@@ -6,19 +6,9 @@ import { pool } from "../../db";
 export const createTask = async (data: any) => {
   const result = await pool.query(
     `INSERT INTO tasks (
-      project_id,
-      activity,
-      description,
-      workers_count,
-      unit_cost,
-      quantity,
-      total_cost,
-      status,
-      start_date,
-      end_date,
-      task_type,
-      category,
-      subcontractor_id
+      project_id, activity, description, workers_count, unit_cost,
+      quantity, total_cost, status, start_date, end_date,
+      task_type, category, subcontractor_id
     )
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     RETURNING *`,
@@ -33,12 +23,11 @@ export const createTask = async (data: any) => {
       data.status || "pending",
       data.start_date || null,
       data.end_date || null,
-      data.task_type || "in_house",
+      data.task_type || "In-house",
       data.category || null,
       data.subcontractor_id || null,
     ]
   );
-
   return result.rows[0];
 };
 
@@ -50,28 +39,19 @@ export const getByProject = async (projectId: string) => {
     `SELECT * FROM tasks WHERE project_id = $1 ORDER BY created_at DESC`,
     [projectId]
   );
-
   return result.rows;
 };
 
 /* =========================
-   UPDATE TASK (ONLY FIELDS IN FORM)
+   UPDATE TASK
 ========================= */
 export const updateTask = async (id: string, data: any) => {
   const result = await pool.query(
     `UPDATE tasks SET
-      activity = $1,
-      description = $2,
-      workers_count = $3,
-      unit_cost = $4,
-      quantity = $5,
-      total_cost = $6,
-      status = $7,
-      start_date = $8,
-      end_date = $9,
-      task_type = $10,
-      category = $11,
-      subcontractor_id = $12
+      activity = $1, description = $2, workers_count = $3,
+      unit_cost = $4, quantity = $5, total_cost = $6, status = $7,
+      start_date = $8, end_date = $9, task_type = $10,
+      category = $11, subcontractor_id = $12
      WHERE id = $13
      RETURNING *`,
     [
@@ -84,13 +64,12 @@ export const updateTask = async (id: string, data: any) => {
       data.status || "pending",
       data.start_date || null,
       data.end_date || null,
-      data.task_type || "in_house",
+      data.task_type || "In-house",
       data.category || null,
       data.subcontractor_id || null,
       id,
     ]
   );
-
   return result.rows[0];
 };
 
@@ -102,62 +81,80 @@ export const deleteTask = async (id: string) => {
 };
 
 /* =========================
-   TASK LOGS (DAILY ENTRIES)
+   ADD TASK LOG
 ========================= */
-
-// ADD LOG
 export const addTaskLog = async (data: any) => {
   const total_cost =
-    Number(data.quantity_done || 0) *
-    Number(data.unit_cost || 0);
+  Number(data.total_cost ?? (Number(data.workers_count || 0) * Number(data.unit_cost || 0)));
 
   const result = await pool.query(
     `INSERT INTO task_logs (
-      task_id,
-      entry_date,
-      quantity_done,
-      workers_count,
-      worker_type,
-      unit_cost,
-      total_cost,
-      progress_percent,
-      remarks
+      task_id, entry_date, quantity_done, workers_count,
+      unit_cost, total_cost, remarks
     )
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    VALUES ($1,$2,$3,$4,$5,$6,$7)
     RETURNING *`,
     [
       data.task_id,
       data.entry_date,
-      data.quantity_done,
-      data.workers_count,
-      data.worker_type,
-      data.unit_cost,
+      data.quantity_done || 1,
+      data.workers_count || 1,
+      data.unit_cost || 0,
       total_cost,
-      data.progress_percent,
-      data.remarks,
+      data.remarks || null,
     ]
   );
-
   return result.rows[0];
 };
 
-// GET LOGS
+/* =========================
+   UPDATE TASK LOG
+========================= */
+export const updateTaskLog = async (id: string, data: any) => {
+  const total_cost =
+    Number(data.total_cost ?? Number(data.workers_count) * Number(data.unit_cost));
+
+  const result = await pool.query(
+    `UPDATE task_logs SET
+      entry_date = $1, quantity_done = $2, workers_count = $3,
+      unit_cost = $4, total_cost = $5, remarks = $6
+     WHERE id = $7
+     RETURNING *`,
+    [
+      data.entry_date,
+      data.quantity_done || 1,
+      data.workers_count || 1,
+      data.unit_cost || 0,
+      total_cost,
+      data.remarks || null,
+      id,
+    ]
+  );
+  return result.rows[0];
+};
+
+/* =========================
+   DELETE TASK LOG
+========================= */
+export const deleteTaskLog = async (id: string) => {
+  await pool.query(`DELETE FROM task_logs WHERE id = $1`, [id]);
+};
+
+/* =========================
+   GET LOGS BY PROJECT
+========================= */
 export const getTaskLogs = async (projectId: string) => {
   const result = await pool.query(
-    `
-    SELECT
+    `SELECT
       tl.*,
       t.activity AS task_name,
       t.category,
       t.task_type
     FROM task_logs tl
-    JOIN tasks t
-      ON t.id = tl.task_id
+    JOIN tasks t ON t.id = tl.task_id
     WHERE t.project_id = $1
-    ORDER BY tl.entry_date DESC
-    `,
+    ORDER BY tl.entry_date DESC`,
     [projectId]
   );
-
   return result.rows;
 };
