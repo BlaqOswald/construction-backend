@@ -6,18 +6,10 @@ import { allowRoles } from "../../middleware/role.middleware";
 const router = Router();
 
 /**
- * =========================
- * REPORT ROUTES (RBAC)
- * =========================
- */
-
-/**
- * GET PROJECT REPORT
- * Admin + Manager + Client
+ * GET /reports/:projectId
+ * GET /reports/:projectId?month=2026-03
  *
- * Client is read-only.
- * Controller should verify client is assigned
- * to requested project.
+ * Roles: admin, manager, client (read-only)
  */
 router.get(
   "/:projectId",
