@@ -267,7 +267,7 @@ export const getReport = async (projectId: string, month?: string) => {
       totalProjectCost:
         totalMaterialCost +
         totalSubCost +
-        totalTaskCost +
+        inHouseCost +
         totalPreDevCost +
         totalOverheadPaid,
       balanceOwed,
