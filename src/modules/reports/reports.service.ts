@@ -227,7 +227,7 @@ export const getReport = async (projectId: string, month?: string) => {
 
   // ================= GRAND TOTAL — NO DOUBLE COUNTING =================
   const totalProjectCost =
-    totalTaskCost       +   // in-house labour only
+    inHouseCost       +   // in-house labour only
     totalSubCost      +   // subcontractor contracts
     totalMaterialCost +   // materials (suppliers = payment view only, not added)
     totalPreDevCost   +   // pre-development
