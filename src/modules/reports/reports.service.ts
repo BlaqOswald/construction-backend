@@ -117,7 +117,7 @@ export const getReport = async (projectId: string, month?: string) => {
          '[]'
        ) AS payment_history
      FROM site_overheads o
-     LEFT JOIN site_overhead_payments p ON p.overhead_id = o.id
+     LEFT JOIN overhead_payment_history p ON p.overhead_id = o.id
      WHERE o.project_id = $1
      GROUP BY o.id
      ORDER BY o.category, o.item_name`,
