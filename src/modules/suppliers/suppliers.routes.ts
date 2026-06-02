@@ -42,6 +42,6 @@ router.post("/payment", addPayment);
 
 router.post("/payment/bulk", bulkPayment);
 
-router.post("/suppliers/advance", addAdvance);
+router.post("/advance", addAdvance);
 
 export default router;
