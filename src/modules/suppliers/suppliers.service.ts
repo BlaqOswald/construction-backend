@@ -95,35 +95,51 @@ export const getSuppliersByProjectService =
                   [supplier.id]
                 );
 
+              // ADVANCES
+              const advances =
+                await pool.query(
+                  `
+            SELECT *
+            FROM supplier_advances
+            WHERE supplier_id = $1
+            ORDER BY deposit_date ASC, created_at ASC
+            `,
+                  [supplier.id]
+                );
+
               // TOTAL SUPPLIED
               const totalSupplied =
                 deliveries.rows.reduce(
-                  (
-                    sum,
-                    d
-                  ) =>
-                    sum +
-                    Number(
-                      d.total_cost ||
-                        0
-                    ),
+                  (sum, d) =>
+                    sum + Number(d.total_cost || 0),
                   0
                 );
 
-              // TOTAL PAID
+              // TOTAL PAID (from payments table — includes advance-sourced payments)
               const totalPaid =
                 payments.rows.reduce(
-                  (
-                    sum,
-                    p
-                  ) =>
-                    sum +
-                    Number(
-                      p.amount_paid ||
-                        0
-                    ),
+                  (sum, p) =>
+                    sum + Number(p.amount_paid || 0),
                   0
                 );
+
+              // ADVANCE SUMMARY
+              const totalAdvanced =
+                advances.rows.reduce(
+                  (sum, a) =>
+                    sum + Number(a.amount || 0),
+                  0
+                );
+
+              const advanceRemaining =
+                advances.rows.reduce(
+                  (sum, a) =>
+                    sum + Number(a.remaining_balance || 0),
+                  0
+                );
+
+              const advanceConsumed =
+                totalAdvanced - advanceRemaining;
 
               return {
                 ...supplier,
@@ -134,13 +150,18 @@ export const getSuppliersByProjectService =
                 payments:
                   payments.rows,
 
+                advances:
+                  advances.rows,
+
                 summary: {
                   totalSupplied,
                   totalPaid,
+                  balance: totalSupplied - totalPaid,
 
-                  balance:
-                    totalSupplied -
-                    totalPaid,
+                  // advance breakdown
+                  totalAdvanced,
+                  advanceConsumed,
+                  advanceRemaining,
                 },
               };
             }
@@ -159,7 +180,145 @@ export const getSuppliersByProjectService =
   };
 
 // ======================
+// ADD ADVANCE (DEPOSIT BEFORE PURCHASE)
+// Records the upfront payment and stores full amount as remaining_balance.
+// ======================
+export const addAdvanceService =
+  async (data: any) => {
+    try {
+      const {
+        supplier_id,
+        amount,
+        deposit_date,
+        note,
+      } = data;
+
+      const amt = Number(amount) || 0;
+
+      const result =
+        await pool.query(
+          `
+      INSERT INTO supplier_advances
+      (
+        supplier_id,
+        amount,
+        deposit_date,
+        note,
+        remaining_balance
+      )
+      VALUES ($1,$2,$3,$4,$5)
+      RETURNING *
+      `,
+          [
+            supplier_id,
+            amt,
+            deposit_date || null,
+            note || null,
+            amt, // initially the full amount is unallocated
+          ]
+        );
+
+      return result.rows[0];
+    } catch (err) {
+      console.error(
+        "❌ ADD ADVANCE ERROR:",
+        err
+      );
+
+      throw err;
+    }
+  };
+
+// ======================
+// INTERNAL HELPER: consume advance balance against a delivery
+// Called automatically inside addDeliveryService.
+// Works FIFO across all advances with remaining_balance > 0.
+// ======================
+const consumeAdvancesForDelivery = async (
+  supplier_id: string,
+  delivery_id: string,
+  delivery_total: number,
+  delivery_date: string | null
+) => {
+  // Fetch advances that still have balance, oldest deposit first
+  const advances = await pool.query(
+    `
+    SELECT *
+    FROM supplier_advances
+    WHERE supplier_id = $1
+      AND remaining_balance > 0
+    ORDER BY deposit_date ASC, created_at ASC
+    `,
+    [supplier_id]
+  );
+
+  let remainingCost = delivery_total;
+
+  for (const advance of advances.rows) {
+    if (remainingCost <= 0) break;
+
+    const availableFromAdvance =
+      Number(advance.remaining_balance);
+
+    const consumeNow =
+      remainingCost >= availableFromAdvance
+        ? availableFromAdvance
+        : remainingCost;
+
+    // Insert payment record linked to this advance
+    await pool.query(
+      `
+      INSERT INTO supplier_payments
+      (
+        supplier_id,
+        delivery_id,
+        amount_paid,
+        payment_date,
+        note,
+        source_advance_id
+      )
+      VALUES ($1,$2,$3,$4,$5,$6)
+      `,
+      [
+        supplier_id,
+        delivery_id,
+        consumeNow,
+        delivery_date || advance.deposit_date,
+        `Auto-allocated from advance deposited on ${advance.deposit_date ?? "N/A"}`,
+        advance.id,
+      ]
+    );
+
+    // Reduce the advance's remaining balance
+    await pool.query(
+      `
+      UPDATE supplier_advances
+      SET remaining_balance = remaining_balance - $1
+      WHERE id = $2
+      `,
+      [consumeNow, advance.id]
+    );
+
+    remainingCost -= consumeNow;
+  }
+
+  // Whatever was covered by advances
+  const coveredByAdvance = delivery_total - remainingCost;
+
+  // Determine payment status for this delivery
+  let paymentStatus = "Unpaid";
+  if (coveredByAdvance >= delivery_total) {
+    paymentStatus = "Paid";
+  } else if (coveredByAdvance > 0) {
+    paymentStatus = "Partial";
+  }
+
+  return paymentStatus;
+};
+
+// ======================
 // ADD DELIVERY
+// After inserting, auto-consumes available advance balance (FIFO).
 // ======================
 export const addDeliveryService =
   async (data: any) => {
@@ -170,19 +329,14 @@ export const addDeliveryService =
         quantity,
         unit_cost,
         invoice_number,
-        payment_status,
         date_sent,
       } = data;
 
-      const qty =
-        Number(quantity) || 0;
+      const qty = Number(quantity) || 0;
+      const unit = Number(unit_cost) || 0;
+      const total_cost = qty * unit;
 
-      const unit =
-        Number(unit_cost) || 0;
-
-      const total_cost =
-        qty * unit;
-
+      // Insert delivery first (status will be updated after advance check)
       const result =
         await pool.query(
           `
@@ -206,15 +360,38 @@ export const addDeliveryService =
             qty,
             unit,
             total_cost,
-            invoice_number ||
-              null,
-            payment_status ||
-              "Unpaid",
+            invoice_number || null,
+            "Unpaid", // default; will update below
             date_sent || null,
           ]
         );
 
-      return result.rows[0];
+      const delivery = result.rows[0];
+
+      // Auto-consume any available advance balance
+      const resolvedStatus =
+        await consumeAdvancesForDelivery(
+          supplier_id,
+          delivery.id,
+          total_cost,
+          date_sent || null
+        );
+
+      // Update payment status based on advance coverage
+      if (resolvedStatus !== "Unpaid") {
+        await pool.query(
+          `
+          UPDATE supplier_deliveries
+          SET payment_status = $1
+          WHERE id = $2
+          `,
+          [resolvedStatus, delivery.id]
+        );
+
+        delivery.payment_status = resolvedStatus;
+      }
+
+      return delivery;
     } catch (err) {
       console.error(
         "❌ ADD DELIVERY ERROR:",
@@ -253,11 +430,8 @@ export const addPaymentService =
       `,
           [
             supplier_id,
-            Number(
-              amount_paid
-            ) || 0,
-            payment_date ||
-              null,
+            Number(amount_paid) || 0,
+            payment_date || null,
             note || null,
           ]
         );
@@ -295,10 +469,8 @@ export const updateSupplierService =
       `,
           [
             data.name,
-            data.location ||
-              null,
-            data.contact ||
-              null,
+            data.location || null,
+            data.contact || null,
             id,
           ]
         );
@@ -320,20 +492,18 @@ export const updateSupplierService =
 export const deleteSupplierService =
   async (id: string) => {
     try {
-
       await pool.query(
-        `
-        DELETE FROM supplier_payments
-        WHERE supplier_id = $1
-        `,
+        `DELETE FROM supplier_payments WHERE supplier_id = $1`,
         [id]
       );
 
       await pool.query(
-        `
-        DELETE FROM supplier_deliveries
-        WHERE supplier_id = $1
-        `,
+        `DELETE FROM supplier_deliveries WHERE supplier_id = $1`,
+        [id]
+      );
+
+      await pool.query(
+        `DELETE FROM supplier_advances WHERE supplier_id = $1`,
         [id]
       );
 
@@ -367,17 +537,9 @@ export const updateDeliveryService =
     data: any
   ) => {
     try {
-      const quantity = Number(
-        data.quantity
-      );
-
-      const unit_cost = Number(
-        data.unit_cost
-      );
-
-      const total_cost =
-        quantity *
-        unit_cost;
+      const quantity = Number(data.quantity);
+      const unit_cost = Number(data.unit_cost);
+      const total_cost = quantity * unit_cost;
 
       const result =
         await pool.query(
@@ -419,16 +581,36 @@ export const updateDeliveryService =
 
 // ======================
 // DELETE DELIVERY
+// Restores advance balance for any advance-sourced payments on this delivery.
 // ======================
 export const deleteDeliveryService =
   async (id: string) => {
     try {
+      // Find any payments sourced from an advance so we can restore balance
+      const advancePayments = await pool.query(
+        `
+        SELECT *
+        FROM supplier_payments
+        WHERE delivery_id = $1
+          AND source_advance_id IS NOT NULL
+        `,
+        [id]
+      );
+
+      // Restore each advance's remaining_balance
+      for (const p of advancePayments.rows) {
+        await pool.query(
+          `
+          UPDATE supplier_advances
+          SET remaining_balance = remaining_balance + $1
+          WHERE id = $2
+          `,
+          [Number(p.amount_paid), p.source_advance_id]
+        );
+      }
 
       await pool.query(
-        `
-        DELETE FROM supplier_payments
-        WHERE delivery_id = $1
-        `,
+        `DELETE FROM supplier_payments WHERE delivery_id = $1`,
         [id]
       );
 
@@ -468,30 +650,20 @@ export const payDeliveryService =
 
       const delivery =
         await pool.query(
-          `
-      SELECT *
-      FROM supplier_deliveries
-      WHERE id = $1
-      `,
+          `SELECT * FROM supplier_deliveries WHERE id = $1`,
           [delivery_id]
         );
 
-      const row =
-        delivery.rows[0];
+      const row = delivery.rows[0];
 
       if (!row) {
-        throw new Error(
-          "Delivery not found"
-        );
+        throw new Error("Delivery not found");
       }
 
       const existingPayments =
         await pool.query(
           `
-        SELECT COALESCE(
-          SUM(amount_paid),
-          0
-        ) as total
+        SELECT COALESCE(SUM(amount_paid), 0) as total
         FROM supplier_payments
         WHERE delivery_id = $1
         `,
@@ -499,77 +671,42 @@ export const payDeliveryService =
         );
 
       const alreadyPaid =
-        Number(
-          existingPayments
-            .rows[0].total
-        );
+        Number(existingPayments.rows[0].total);
 
-      const totalCost =
-        Number(
-          row.total_cost
-        );
+      const totalCost = Number(row.total_cost);
+      const newPaid = alreadyPaid + Number(amount_paid);
 
-      const newPaid =
-        alreadyPaid +
-        Number(amount_paid);
-
-      let status =
-        "Partial";
-
-      if (
-        newPaid >= totalCost
-      ) {
+      let status = "Partial";
+      if (newPaid >= totalCost) {
         status = "Paid";
       }
 
       await pool.query(
         `
       INSERT INTO supplier_payments
-      (
-        supplier_id,
-        delivery_id,
-        amount_paid,
-        payment_date
-      )
+      (supplier_id, delivery_id, amount_paid, payment_date)
       VALUES ($1,$2,$3,$4)
       `,
-        [
-          supplier_id,
-          delivery_id,
-          amount_paid,
-          payment_date,
-        ]
+        [supplier_id, delivery_id, amount_paid, payment_date]
       );
 
       await pool.query(
-        `
-      UPDATE supplier_deliveries
-      SET payment_status = $1
-      WHERE id = $2
-      `,
-        [
-          status,
-          delivery_id,
-        ]
+        `UPDATE supplier_deliveries SET payment_status = $1 WHERE id = $2`,
+        [status, delivery_id]
       );
 
-      return {
-        success: true,
-      };
+      return { success: true };
     } catch (err) {
-      console.error(
-        "❌ PAY DELIVERY ERROR:",
-        err
-      );
-
+      console.error("❌ PAY DELIVERY ERROR:", err);
       throw err;
     }
   };
 
 // ======================
-// BULK ENGINE 
+// BULK PAYMENT ENGINE
+// Pays against existing unpaid/partial deliveries (FIFO).
 // ======================
-  export const bulkPaymentService = async (data: any) => {
+export const bulkPaymentService = async (data: any) => {
   const {
     supplier_id,
     amount_paid,
@@ -579,13 +716,13 @@ export const payDeliveryService =
 
   let remaining = Number(amount_paid);
 
-  // 1. GET UNPAID + PARTIAL ITEMS (FIFO)
+  // 1. GET UNPAID + PARTIAL DELIVERIES (FIFO)
   const deliveries = await pool.query(
     `
     SELECT *
     FROM supplier_deliveries
     WHERE supplier_id = $1
-    AND payment_status != 'Paid'
+      AND payment_status != 'Paid'
     ORDER BY created_at ASC
     `,
     [supplier_id]
@@ -597,7 +734,7 @@ export const payDeliveryService =
     // 2. GET already paid for this delivery
     const paidResult = await pool.query(
       `
-      SELECT COALESCE(SUM(amount_paid),0) as paid
+      SELECT COALESCE(SUM(amount_paid), 0) as paid
       FROM supplier_payments
       WHERE delivery_id = $1
       `,
@@ -609,44 +746,27 @@ export const payDeliveryService =
 
     if (balance <= 0) continue;
 
-    let payNow = 0;
+    const payNow =
+      remaining >= balance ? balance : remaining;
 
-    if (remaining >= balance) {
-      payNow = balance;
-    } else {
-      payNow = remaining;
-    }
-
-    // 3. INSERT PAYMENT FOR THIS ITEM
+    // 3. INSERT PAYMENT
     await pool.query(
       `
       INSERT INTO supplier_payments
       (supplier_id, delivery_id, amount_paid, payment_date, note)
       VALUES ($1,$2,$3,$4,$5)
       `,
-      [
-        supplier_id,
-        d.id,
-        payNow,
-        payment_date,
-        note || null,
-      ]
+      [supplier_id, d.id, payNow, payment_date, note || null]
     );
 
     remaining -= payNow;
 
     // 4. UPDATE STATUS
     const newBalance = balance - payNow;
-
-    let status = "Partial";
-    if (newBalance === 0) status = "Paid";
+    const status = newBalance === 0 ? "Paid" : "Partial";
 
     await pool.query(
-      `
-      UPDATE supplier_deliveries
-      SET payment_status = $1
-      WHERE id = $2
-      `,
+      `UPDATE supplier_deliveries SET payment_status = $1 WHERE id = $2`,
       [status, d.id]
     );
   }

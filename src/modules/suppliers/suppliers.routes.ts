@@ -10,7 +10,8 @@ import {
   updateDelivery,
   deleteDelivery,
   payDelivery,
-  bulkPayment
+  bulkPayment,
+  addAdvance
 } from "./suppliers.controller";
 
 const router = Router();
@@ -40,5 +41,7 @@ router.post("/delivery/pay", payDelivery);
 router.post("/payment", addPayment);
 
 router.post("/payment/bulk", bulkPayment);
+
+router.post("/suppliers/advance", addAdvance);
 
 export default router;

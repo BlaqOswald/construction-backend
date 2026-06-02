@@ -7,6 +7,7 @@ import {
   getSuppliersByProjectService,
   addDeliveryService,
   addPaymentService,
+  addAdvanceService,
   updateSupplierService,
   deleteSupplierService,
   updateDeliveryService,
@@ -24,17 +25,12 @@ export const createSupplier = async (
 ) => {
   try {
     const supplier =
-      await createSupplierService(
-        req.body
-      );
+      await createSupplierService(req.body);
 
     res.json(supplier);
   } catch (err) {
     console.error(err);
-
-    res.status(500).json({
-      error: "Create supplier failed",
-    });
+    res.status(500).json({ error: "Create supplier failed" });
   }
 };
 
@@ -42,29 +38,38 @@ export const createSupplier = async (
 // GET SUPPLIERS BY PROJECT
 // ======================
 export const getSuppliersByProject =
-  async (
-    req: Request,
-    res: Response
-  ) => {
+  async (req: Request, res: Response) => {
     try {
-      const projectId = String(
-        req.params.projectId
-      );
+      const projectId = String(req.params.projectId);
 
       const data =
-        await getSuppliersByProjectService(
-          projectId
-        );
+        await getSuppliersByProjectService(projectId);
 
       res.json(data);
     } catch (err) {
       console.error(err);
-
-      res.status(500).json({
-        error: "Fetch suppliers failed",
-      });
+      res.status(500).json({ error: "Fetch suppliers failed" });
     }
   };
+
+// ======================
+// ADD ADVANCE (DEPOSIT BEFORE PURCHASE)
+// POST body: { supplier_id, amount, deposit_date, note }
+// ======================
+export const addAdvance = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const advance =
+      await addAdvanceService(req.body);
+
+    res.json(advance);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Add advance failed" });
+  }
+};
 
 // ======================
 // ADD DELIVERY
@@ -75,17 +80,12 @@ export const addDelivery = async (
 ) => {
   try {
     const delivery =
-      await addDeliveryService(
-        req.body
-      );
+      await addDeliveryService(req.body);
 
     res.json(delivery);
   } catch (err) {
     console.error(err);
-
-    res.status(500).json({
-      error: "Add delivery failed",
-    });
+    res.status(500).json({ error: "Add delivery failed" });
   }
 };
 
@@ -98,17 +98,12 @@ export const addPayment = async (
 ) => {
   try {
     const payment =
-      await addPaymentService(
-        req.body
-      );
+      await addPaymentService(req.body);
 
     res.json(payment);
   } catch (err) {
     console.error(err);
-
-    res.status(500).json({
-      error: "Add payment failed",
-    });
+    res.status(500).json({ error: "Add payment failed" });
   }
 };
 
@@ -116,28 +111,17 @@ export const addPayment = async (
 // UPDATE SUPPLIER
 // ======================
 export const updateSupplier =
-  async (
-    req: Request,
-    res: Response
-  ) => {
+  async (req: Request, res: Response) => {
     try {
-      const id = String(
-        req.params.id
-      );
+      const id = String(req.params.id);
 
       const supplier =
-        await updateSupplierService(
-          id,
-          req.body
-        );
+        await updateSupplierService(id, req.body);
 
       res.json(supplier);
     } catch (err) {
       console.error(err);
-
-      res.status(500).json({
-        error: "Update supplier failed",
-      });
+      res.status(500).json({ error: "Update supplier failed" });
     }
   };
 
@@ -145,27 +129,17 @@ export const updateSupplier =
 // DELETE SUPPLIER
 // ======================
 export const deleteSupplier =
-  async (
-    req: Request,
-    res: Response
-  ) => {
+  async (req: Request, res: Response) => {
     try {
-      const id = String(
-        req.params.id
-      );
+      const id = String(req.params.id);
 
       const supplier =
-        await deleteSupplierService(
-          id
-        );
+        await deleteSupplierService(id);
 
       res.json(supplier);
     } catch (err) {
       console.error(err);
-
-      res.status(500).json({
-        error: "Delete supplier failed",
-      });
+      res.status(500).json({ error: "Delete supplier failed" });
     }
   };
 
@@ -173,28 +147,17 @@ export const deleteSupplier =
 // UPDATE DELIVERY
 // ======================
 export const updateDelivery =
-  async (
-    req: Request,
-    res: Response
-  ) => {
+  async (req: Request, res: Response) => {
     try {
-      const id = String(
-        req.params.id
-      );
+      const id = String(req.params.id);
 
       const result =
-        await updateDeliveryService(
-          id,
-          req.body
-        );
+        await updateDeliveryService(id, req.body);
 
       res.json(result);
     } catch (err) {
       console.error(err);
-
-      res.status(500).json({
-        error: "Update delivery failed",
-      });
+      res.status(500).json({ error: "Update delivery failed" });
     }
   };
 
@@ -202,27 +165,17 @@ export const updateDelivery =
 // DELETE DELIVERY
 // ======================
 export const deleteDelivery =
-  async (
-    req: Request,
-    res: Response
-  ) => {
+  async (req: Request, res: Response) => {
     try {
-      const id = String(
-        req.params.id
-      );
+      const id = String(req.params.id);
 
       const result =
-        await deleteDeliveryService(
-          id
-        );
+        await deleteDeliveryService(id);
 
       res.json(result);
     } catch (err) {
       console.error(err);
-
-      res.status(500).json({
-        error: "Delete delivery failed",
-      });
+      res.status(500).json({ error: "Delete delivery failed" });
     }
   };
 
@@ -235,27 +188,29 @@ export const payDelivery = async (
 ) => {
   try {
     const result =
-      await payDeliveryService(
-        req.body
-      );
+      await payDeliveryService(req.body);
 
     res.json(result);
   } catch (err) {
     console.error(err);
-
-    res.status(500).json({
-      error: "Payment failed",
-    });
+    res.status(500).json({ error: "Payment failed" });
   }
 };
-export const bulkPayment = async (req: Request, res: Response) => {
+
+// ======================
+// BULK PAYMENT
+// ======================
+export const bulkPayment = async (
+  req: Request,
+  res: Response
+) => {
   try {
-    const result = await bulkPaymentService(req.body);
+    const result =
+      await bulkPaymentService(req.body);
+
     res.json(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      error: "Bulk payment failed",
-    });
+    res.status(500).json({ error: "Bulk payment failed" });
   }
 };
