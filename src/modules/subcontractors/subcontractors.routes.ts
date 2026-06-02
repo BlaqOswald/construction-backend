@@ -55,4 +55,6 @@ router.put(
   controller.addPayment
 );
 
+router.get("/project/:projectId", authMiddleware, controller.getByProject);
+
 export default router;

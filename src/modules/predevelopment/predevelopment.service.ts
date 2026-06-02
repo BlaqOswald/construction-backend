@@ -31,8 +31,35 @@ export const addCategory = async (data: any) => {
 // =============================
 // GET CATEGORIES BY PROJECT (FIXED)
 // =============================
-export const getCategoriesByProject = async (projectId: string) => {
+export const getCategoriesByProject = async (
+  user: any,
+  projectId: string
+) => {
   try {
+    // ADMIN → sees everything (no filter)
+    if (user?.role === "admin") {
+      const result = await pool.query(
+        `
+        SELECT
+          c.id,
+          c.name,
+          c.project_id,
+          c.status,
+          c.created_at,
+          COALESCE(SUM(i.amount_paid), 0) AS total_spent,
+          COUNT(i.id) AS transactions
+        FROM predev_categories c
+        LEFT JOIN predev_cost_items i
+          ON i.category_id = c.id
+        GROUP BY c.id
+        ORDER BY c.created_at DESC
+        `
+      );
+
+      return result.rows;
+    }
+
+    // NON-ADMIN → restricted by user projectIds
     const result = await pool.query(
       `
       SELECT
@@ -41,27 +68,16 @@ export const getCategoriesByProject = async (projectId: string) => {
         c.project_id,
         c.status,
         c.created_at,
-
         COALESCE(SUM(i.amount_paid), 0) AS total_spent,
         COUNT(i.id) AS transactions
-
       FROM predev_categories c
-
       LEFT JOIN predev_cost_items i
         ON i.category_id = c.id
-
-      WHERE c.project_id = $1
-
-      GROUP BY
-        c.id,
-        c.name,
-        c.project_id,
-        c.status,
-        c.created_at
-
+      WHERE c.project_id = ANY($1)
+      GROUP BY c.id
       ORDER BY c.created_at DESC
       `,
-      [projectId]
+      [user.projectIds]
     );
 
     return result.rows;
@@ -70,6 +86,8 @@ export const getCategoriesByProject = async (projectId: string) => {
     throw err;
   }
 };
+
+
 
 // =============================
 // UPDATE CATEGORY

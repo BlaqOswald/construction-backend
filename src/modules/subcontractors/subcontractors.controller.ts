@@ -17,16 +17,15 @@ export const addSubcontractor = async (req: Request, res: Response) => {
 };
 
 // ================= GET =================
-export const getByProject = async (req: Request, res: Response) => {
+export const getByProject = async (req: any, res: Response) => {
   try {
     const projectId = getId(req.params.projectId);
-    const result = await service.getByProject(projectId);
+    const result = await service.getByProject(req.user, projectId);
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: "Fetch failed" });
   }
 };
-
 // ================= DELETE =================
 export const deleteSub = async (req: Request, res: Response) => {
   try {

@@ -21,7 +21,7 @@ export const loginUser = async (
     throw new Error("User not found");
   }
 
-  // FIRST LOGIN TEMP PASSWORD FLOW
+  // FIRST LOGIN TEMP PASSWORD FLOW (KEEP AS IS)
   if (user.must_set_password) {
     if (password !== user.temp_password) {
       throw new Error("Invalid temporary password");
@@ -36,24 +36,23 @@ export const loginUser = async (
   // NORMAL LOGIN
   const isMatch = await bcrypt.compare(
     password,
-    user.password
+    user.password_hash // ✅ FIXED (was password)
   );
 
   if (!isMatch) {
     throw new Error("Invalid password");
   }
 
+  // ✅ SINGLE TOKEN (CLEAN)
   const token = jwt.sign(
     {
       id: user.id,
       email: user.email,
       role: user.role,
-      projectIds: user.project_ids || [],
+      projectIds: user.project_ids || null, // 👈 YOUR REQUIREMENT
     },
     process.env.JWT_SECRET!,
-    {
-      expiresIn: "1d",
-    }
+    { expiresIn: "7d" }
   );
 
   return {
@@ -63,7 +62,7 @@ export const loginUser = async (
       email: user.email,
       name: user.name,
       role: user.role,
-      projectIds: user.project_ids || [],
+      projectId: user.project_id || null,
     },
   };
 };

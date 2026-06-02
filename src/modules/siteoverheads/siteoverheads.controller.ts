@@ -32,12 +32,10 @@ export const createOverhead = async (req: Request, res: Response) => {
 // ======================
 // GET PROJECT OVERHEADS
 // ======================
-export const getProjectOverheads = async (req: Request, res: Response) => {
+export const getProjectOverheads = async (req: any, res: Response) => {
   try {
     const projectId = getParam(req.params.projectId);
-
-    const data = await getByProject(projectId);
-
+    const data = await getByProject(req.user, projectId);
     res.json(data);
   } catch (err) {
     console.error(err);

@@ -41,30 +41,16 @@ export const createSupplier = async (
 // ======================
 // GET SUPPLIERS BY PROJECT
 // ======================
-export const getSuppliersByProject =
-  async (
-    req: Request,
-    res: Response
-  ) => {
-    try {
-      const projectId = String(
-        req.params.projectId
-      );
-
-      const data =
-        await getSuppliersByProjectService(
-          projectId
-        );
-
-      res.json(data);
-    } catch (err) {
-      console.error(err);
-
-      res.status(500).json({
-        error: "Fetch suppliers failed",
-      });
-    }
-  };
+export const getSuppliersByProject = async (req: any, res: Response) => {
+  try {
+    const projectId = String(req.params.projectId);
+    const data = await getSuppliersByProjectService(req.user, projectId);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Fetch suppliers failed" });
+  }
+};
 
 // ======================
 // ADD DELIVERY

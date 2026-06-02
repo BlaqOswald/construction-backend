@@ -50,21 +50,22 @@ export const createSupplierService =
 // ======================
 // GET SUPPLIERS BY PROJECT
 // ======================
-export const getSuppliersByProjectService =
-  async (
-    projectId: string
-  ) => {
-    try {
-      const suppliers =
-        await pool.query(
-          `
-      SELECT *
-      FROM suppliers
-      WHERE project_id = $1
-      ORDER BY created_at DESC
-      `,
-          [projectId]
-        );
+export const getSuppliersByProjectService = async (user: any, projectId: string) => {
+  try {
+    let suppliers;
+
+    if (user?.role === "admin") {
+      suppliers = await pool.query(
+        `SELECT * FROM suppliers ORDER BY created_at DESC`
+      );
+    } else {
+      suppliers = await pool.query(
+        `SELECT * FROM suppliers
+         WHERE project_id = ANY($1)
+         ORDER BY created_at DESC`,
+        [user.projectIds]
+      );
+    }
 
       const finalData =
         await Promise.all(

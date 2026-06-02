@@ -55,4 +55,6 @@ router.delete(
   controller.deleteMaterial
 );
 
+router.get("/project/:projectId", authMiddleware, controller.getByProject);
+
 export default router;

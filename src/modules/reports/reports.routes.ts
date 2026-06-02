@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { getReport } from "./reports.controller";
+import * as controller from "./reports.controller";
 import { authMiddleware } from "../../middleware/auth.middleware";
 import { allowRoles } from "../../middleware/role.middleware";
+
 
 const router = Router();
 
@@ -17,5 +19,7 @@ router.get(
   allowRoles(["admin", "manager", "client"]),
   getReport
 );
+
+router.get("/project/:projectId", authMiddleware, controller.getReport);
 
 export default router;
