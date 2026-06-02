@@ -84,7 +84,7 @@ router.delete(
   controller.deleteCostItem
 );
 
-router.get("/project/:projectid",authMiddleware,controller.getCategoriesByProject)
+
 
 // =============================
 // ATTACHMENT ROUTES

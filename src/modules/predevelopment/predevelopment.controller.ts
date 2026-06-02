@@ -41,25 +41,38 @@ export const addCategory = async (
 // GET CATEGORIES BY PROJECT
 // =============================
 
-export const getCategoriesByProject = async (
-  req: any,
-  res: Response
-) => {
-  try {
-    const projectId = String(req.params.projectId);
+export const getCategoriesByProject =
+  async (
+    req: Request,
+    res: Response
+  ) => {
+    try {
+      const projectId = String(
+        req.params.projectId
+      );
 
-    const result =
-      await service.getCategoriesByProject(req.user, projectId);
+      const result =
+        await service.getCategoriesByProject(
+          projectId
+        );
 
-    return res.json(result);
-  } catch (err) {
-    console.error("CATEGORY FETCH ERROR:", err);
+      return res.json(result);
+    } catch (err) {
+      console.error(
+        "CATEGORY FETCH ERROR:",
+        err
+      );
 
-    return res.status(500).json({
-      message: "Failed to fetch categories",
-    });
-  }
-};
+      return res.status(500).json({
+        message:
+          "Failed to fetch categories",
+        error:
+          err instanceof Error
+            ? err.message
+            : err,
+      });
+    }
+  };
 
 
 

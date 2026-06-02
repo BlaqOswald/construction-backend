@@ -34,8 +34,7 @@ export const createTask = async (data: any) => {
 /* =========================
    GET BY PROJECT
 ========================= */
-export const getByProject = async (user: any, projectId?: string) => {
-  if (user.role === "admin"){
+export const getByProject = async (projectId: string) => {
   const result = await pool.query(
     `
     SELECT
@@ -65,29 +64,6 @@ export const getByProject = async (user: any, projectId?: string) => {
     ORDER BY t.created_at DESC
     `,
     [projectId]
-  );
-
-  return result.rows;
-}
- const result = await pool.query(
-    `
-    SELECT
-      t.*,
-      MIN(l.entry_date) AS start_date,
-      MAX(l.entry_date) AS end_date,
-      CASE
-        WHEN t.task_type = 'Subcontractor'
-        THEN COALESCE(s.total_contract_cost, 0)
-        ELSE COALESCE(SUM(l.total_cost), 0)
-      END AS total_cost
-    FROM tasks t
-    LEFT JOIN task_logs l ON l.task_id = t.id
-    LEFT JOIN subcontractors s ON s.id = t.subcontractor_id
-    WHERE t.project_id = ANY($1)
-    GROUP BY t.id, s.total_contract_cost
-    ORDER BY t.created_at DESC
-    `,
-    [user.projectIds]
   );
 
   return result.rows;

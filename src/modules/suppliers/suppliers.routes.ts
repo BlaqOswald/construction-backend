@@ -12,9 +12,6 @@ import {
   payDelivery,
   bulkPayment
 } from "./suppliers.controller";
-import * as controller from "./suppliers.controller";
-import { authMiddleware } from "../../middleware/auth.middleware";
-import { allowRoles } from "../../middleware/role.middleware";
 
 const router = Router();
 
@@ -43,7 +40,5 @@ router.post("/delivery/pay", payDelivery);
 router.post("/payment", addPayment);
 
 router.post("/payment/bulk", bulkPayment);
-
-router.get("/project/:projectId", authMiddleware, controller.getSuppliersByProject);
 
 export default router;

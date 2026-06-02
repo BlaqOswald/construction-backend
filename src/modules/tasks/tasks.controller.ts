@@ -15,10 +15,10 @@ export const createTask = async (req: Request, res: Response) => {
   }
 };
 
-export const getByProject = async (req: any, res: Response) => {
+export const getByProject = async (req: Request, res: Response) => {
   try {
     const projectId = getId(req.params.projectId);
-    const result = await service.getByProject(req.user, projectId);
+    const result = await service.getByProject(projectId);
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: "Error fetching tasks" });

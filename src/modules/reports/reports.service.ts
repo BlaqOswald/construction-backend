@@ -1,11 +1,9 @@
 import { getByProject as getTasksByProject } from "../tasks/tasks.service";
 import { pool } from "../../db";
 
-export const getReport = async (user: any, projectId: string, month?: string) => {
- 
-  const allTasks = await getTasksByProject(user, projectId);
-
-  
+export const getReport = async (projectId: string, month?: string) => {
+  // ================= TASKS =================
+  const allTasks = await getTasksByProject(projectId);
 
   const tasks = month
     ? allTasks.filter((t: any) =>

@@ -100,20 +100,14 @@ export const addSubcontractor = async (data: any) => {
 };
 
 // ===================== GET =====================
-export const getByProject = async (user: any, projectId: string) => {
-  if (user?.role === "admin") {
-    const result = await pool.query(
-      `SELECT * FROM subcontractors ORDER BY created_at DESC`
-    );
-    return result.rows.map(normalize);
-  }
-
+export const getByProject = async (projectId: string) => {
   const result = await pool.query(
     `SELECT * FROM subcontractors
-     WHERE project_id = ANY($1)
+     WHERE project_id = $1
      ORDER BY created_at DESC`,
-    [user.projectIds]
+    [projectId]
   );
+
   return result.rows.map(normalize);
 };
 

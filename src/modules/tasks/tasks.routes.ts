@@ -69,7 +69,6 @@ router.delete(
   allowRoles(["admin", "manager"]),
   controller.deleteTaskLog
 );
-router.get("/project/:projectId", authMiddleware, controller.getByProject);
 
 export default router;
 

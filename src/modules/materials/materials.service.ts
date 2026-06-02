@@ -62,26 +62,19 @@ export const addMaterial = async (data: any) => {
 // GET BY PROJECT
 // Joins supplier name so the frontend doesn't need a second request
 // ======================
-export const getByProject = async (user: any, projectId: string) => {
+export const getByProject = async (projectId: string) => {
   try {
-    if (user?.role === "admin") {
-      const result = await pool.query(
-        `SELECT m.*, s.name AS supplier_name
-         FROM materials m
-         LEFT JOIN suppliers s ON s.id = m.supplier_id
-         ORDER BY m.created_at DESC`
-      );
-      return result.rows;
-    }
-
     const result = await pool.query(
-      `SELECT m.*, s.name AS supplier_name
+      `SELECT
+         m.*,
+         s.name AS supplier_name
        FROM materials m
        LEFT JOIN suppliers s ON s.id = m.supplier_id
-       WHERE m.project_id = ANY($1)
+       WHERE m.project_id = $1
        ORDER BY m.created_at DESC`,
-      [user.projectIds]
+      [projectId]
     );
+
     return result.rows;
   } catch (err) {
     console.error("❌ FETCH ERROR:", err);

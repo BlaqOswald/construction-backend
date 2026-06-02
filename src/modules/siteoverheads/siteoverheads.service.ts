@@ -68,37 +68,39 @@ export const addSiteOverhead = async (data: any) => {
 // ======================
 // GET BY PROJECT
 // ======================
-export const getByProject = async (user: any, projectId: string) => {
+export const getByProject = async (projectId: string) => {
   try {
-    if (user?.role === "admin") {
-      const result = await pool.query(
-        `SELECT so.*,
-           COALESCE(json_agg(oph.*) FILTER (WHERE oph.id IS NOT NULL), '[]') AS payment_history
-         FROM site_overheads so
-         LEFT JOIN overhead_payment_history oph ON so.id = oph.overhead_id
-         GROUP BY so.id
-         ORDER BY so.created_at DESC`
-      );
-      return result.rows;
-    }
-
     const result = await pool.query(
-      `SELECT so.*,
-         COALESCE(json_agg(oph.*) FILTER (WHERE oph.id IS NOT NULL), '[]') AS payment_history
-       FROM site_overheads so
-       LEFT JOIN overhead_payment_history oph ON so.id = oph.overhead_id
-       WHERE so.project_id = ANY($1)
-       GROUP BY so.id
-       ORDER BY so.created_at DESC`,
-      [user.projectIds]
+      `
+      SELECT 
+        so.*,
+
+        COALESCE(
+          json_agg(oph.*)
+          FILTER (WHERE oph.id IS NOT NULL),
+          '[]'
+        ) AS payment_history
+
+      FROM site_overheads so
+
+      LEFT JOIN overhead_payment_history oph
+      ON so.id = oph.overhead_id
+
+      WHERE so.project_id = $1
+
+      GROUP BY so.id
+
+      ORDER BY so.created_at DESC
+      `,
+      [projectId]
     );
+
     return result.rows;
   } catch (err) {
     console.error("❌ FETCH ERROR:", err);
     throw err;
   }
 };
-
 
 // ======================
 // UPDATE
