@@ -5,6 +5,7 @@ import * as controller from "./predevelopment.controller";
 import { authMiddleware } from "../../middleware/auth.middleware";
 
 import { allowRoles } from "../../middleware/role.middleware";
+import { validateUuidParam } from "../../middleware/validate";
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.get(
     "manager",
     "client",
   ]),
+  validateUuidParam("projectId"),
   controller.getCategoriesByProject
 );
 

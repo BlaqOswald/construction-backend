@@ -18,3 +18,15 @@ export const validateDto = (dtoClass: any) => {
     next();
   };
 };
+
+export const validateUuidParam = (paramName: string) => {
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    const value = req.params[paramName];
+    if (typeof value !== "string" || !uuidPattern.test(value)) {
+      return res.status(400).json({ message: `${paramName} must be a valid UUID` });
+    }
+    next();
+  };
+};

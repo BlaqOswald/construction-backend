@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as controller from "./materials.controller";
 import { authMiddleware } from "../../middleware/auth.middleware";
 import { allowRoles } from "../../middleware/role.middleware";
+import { validateUuidParam } from "../../middleware/validate";
 
 const router = Router();
 
@@ -30,6 +31,7 @@ router.get(
   "/project/:projectId",
   authMiddleware,
   allowRoles(["admin", "manager", "client"]),
+  validateUuidParam("projectId"),
   controller.getByProject
 );
 

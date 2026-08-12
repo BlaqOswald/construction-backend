@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const siteoverheads_controller_1 = require("./siteoverheads.controller");
+const validate_1 = require("../../middleware/validate");
+const router = (0, express_1.Router)();
+router.get("/project/:projectId", (0, validate_1.validateUuidParam)("projectId"), siteoverheads_controller_1.getProjectOverheads);
+router.post("/", siteoverheads_controller_1.createOverhead);
+router.put("/:id", siteoverheads_controller_1.updateOverhead);
+router.delete("/:id", siteoverheads_controller_1.deleteOverhead);
+router.post("/:id/payment", siteoverheads_controller_1.addPaymentHistory);
+exports.default = router;

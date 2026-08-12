@@ -7,10 +7,11 @@ import {
   deleteOverhead,
   addPaymentHistory,
 } from "./siteoverheads.controller";
+import { validateUuidParam } from "../../middleware/validate";
 
 const router = Router();
 
-router.get("/project/:projectId", getProjectOverheads);
+router.get("/project/:projectId", validateUuidParam("projectId"), getProjectOverheads);
 
 router.post("/", createOverhead);
 

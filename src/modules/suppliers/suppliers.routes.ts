@@ -13,6 +13,7 @@ import {
   bulkPayment,
   addAdvance
 } from "./suppliers.controller";
+import { validateUuidParam } from "../../middleware/validate";
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.post("/", createSupplier);
 
 router.get(
   "/project/:projectId",
+  validateUuidParam("projectId"),
   getSuppliersByProject
 );
 
